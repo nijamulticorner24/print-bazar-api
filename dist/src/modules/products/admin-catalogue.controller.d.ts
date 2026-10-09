@@ -1,11 +1,33 @@
 import { AdminCatalogueService } from './admin-catalogue.service';
 import { JwtPayload } from '../../common/types/roles';
-import { CreateCategoryDto, UpdateCategoryDto, CreateProductDto, UpdateProductDto, CreateProductFieldDto, UpdateProductFieldDto, CreateFieldOptionDto, UpdateFieldOptionDto, CreateProductImageDto, CreateInventoryItemDto, UpdateInventoryItemDto, RecordStockMovementDto } from './dto/catalogue.dto';
+import { CreateCategoryDto, UpdateCategoryDto, CreateProductDto, UpdateProductDto, CreateProductFieldDto, UpdateProductFieldDto, CreateFieldOptionDto, UpdateFieldOptionDto, CreateProductImageDto, CreateInventoryItemDto, UpdateInventoryItemDto, RecordStockMovementDto, CreatePricingRuleDto, UpdatePricingRuleDto, BatchPricingRulesDto } from './dto/catalogue.dto';
 export declare class AdminCatalogueController {
     private readonly catalogueService;
     constructor(catalogueService: AdminCatalogueService);
     listCategories(): Promise<({
+        parent: {
+            id: string;
+            name: string;
+            slug: string;
+        } | null;
+        children: ({
+            _count: {
+                products: number;
+            };
+        } & {
+            id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            slug: string;
+            description: string | null;
+            image: string | null;
+            sortOrder: number;
+            parentId: string | null;
+        })[];
         _count: {
+            children: number;
             products: number;
         };
     } & {
@@ -18,8 +40,30 @@ export declare class AdminCatalogueController {
         description: string | null;
         image: string | null;
         sortOrder: number;
+        parentId: string | null;
     })[]>;
     getCategoryById(id: string): Promise<{
+        parent: {
+            id: string;
+            name: string;
+            slug: string;
+        } | null;
+        children: ({
+            _count: {
+                products: number;
+            };
+        } & {
+            id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            slug: string;
+            description: string | null;
+            image: string | null;
+            sortOrder: number;
+            parentId: string | null;
+        })[];
         products: {
             id: string;
             name: string;
@@ -28,6 +72,10 @@ export declare class AdminCatalogueController {
             status: import(".prisma/client").$Enums.ProductStatus;
             basePrice: import("@prisma/client/runtime/library").Decimal;
         }[];
+        _count: {
+            children: number;
+            products: number;
+        };
     } & {
         id: string;
         isActive: boolean;
@@ -38,8 +86,15 @@ export declare class AdminCatalogueController {
         description: string | null;
         image: string | null;
         sortOrder: number;
+        parentId: string | null;
     }>;
     createCategory(dto: CreateCategoryDto, user: JwtPayload): Promise<{
+        parent: {
+            id: string;
+            name: string;
+            slug: string;
+        } | null;
+    } & {
         id: string;
         isActive: boolean;
         createdAt: Date;
@@ -49,8 +104,31 @@ export declare class AdminCatalogueController {
         description: string | null;
         image: string | null;
         sortOrder: number;
+        parentId: string | null;
     }>;
     updateCategory(id: string, dto: UpdateCategoryDto, user: JwtPayload): Promise<{
+        parent: {
+            id: string;
+            name: string;
+            slug: string;
+        } | null;
+        children: {
+            id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            slug: string;
+            description: string | null;
+            image: string | null;
+            sortOrder: number;
+            parentId: string | null;
+        }[];
+        _count: {
+            children: number;
+            products: number;
+        };
+    } & {
         id: string;
         isActive: boolean;
         createdAt: Date;
@@ -60,6 +138,7 @@ export declare class AdminCatalogueController {
         description: string | null;
         image: string | null;
         sortOrder: number;
+        parentId: string | null;
     }>;
     deleteCategory(id: string, user: JwtPayload): Promise<{
         success: boolean;
@@ -140,6 +219,7 @@ export declare class AdminCatalogueController {
             trackInventory: boolean;
             stockQuantity: number;
             lowStockAlert: number;
+            defaultSize: string | null;
             artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
             artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
             artworkQualityVerification: boolean;
@@ -147,6 +227,10 @@ export declare class AdminCatalogueController {
             referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
             designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
             designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+            courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+            freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+            allowCod: boolean;
+            codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
         })[];
         meta: {
             total: number;
@@ -166,6 +250,7 @@ export declare class AdminCatalogueController {
             description: string | null;
             image: string | null;
             sortOrder: number;
+            parentId: string | null;
         };
         images: {
             id: string;
@@ -244,6 +329,7 @@ export declare class AdminCatalogueController {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
         artworkQualityVerification: boolean;
@@ -251,6 +337,10 @@ export declare class AdminCatalogueController {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     }>;
     createProduct(dto: CreateProductDto, user: JwtPayload): Promise<{
         category: {
@@ -263,6 +353,7 @@ export declare class AdminCatalogueController {
             description: string | null;
             image: string | null;
             sortOrder: number;
+            parentId: string | null;
         };
         images: {
             id: string;
@@ -341,6 +432,7 @@ export declare class AdminCatalogueController {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
         artworkQualityVerification: boolean;
@@ -348,6 +440,10 @@ export declare class AdminCatalogueController {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     }>;
     updateProduct(id: string, dto: UpdateProductDto, user: JwtPayload): Promise<{
         category: {
@@ -360,6 +456,7 @@ export declare class AdminCatalogueController {
             description: string | null;
             image: string | null;
             sortOrder: number;
+            parentId: string | null;
         };
         images: {
             id: string;
@@ -438,6 +535,7 @@ export declare class AdminCatalogueController {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
         artworkQualityVerification: boolean;
@@ -445,6 +543,10 @@ export declare class AdminCatalogueController {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     }>;
     duplicateProduct(id: string, user: JwtPayload): Promise<{
         category: {
@@ -457,6 +559,7 @@ export declare class AdminCatalogueController {
             description: string | null;
             image: string | null;
             sortOrder: number;
+            parentId: string | null;
         };
         images: {
             id: string;
@@ -535,6 +638,7 @@ export declare class AdminCatalogueController {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
         artworkQualityVerification: boolean;
@@ -542,6 +646,10 @@ export declare class AdminCatalogueController {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     }>;
     publishProduct(id: string, user: JwtPayload): Promise<{
         id: string;
@@ -567,6 +675,7 @@ export declare class AdminCatalogueController {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
         artworkQualityVerification: boolean;
@@ -574,6 +683,10 @@ export declare class AdminCatalogueController {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     }>;
     archiveProduct(id: string, user: JwtPayload): Promise<{
         id: string;
@@ -599,6 +712,7 @@ export declare class AdminCatalogueController {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
         artworkQualityVerification: boolean;
@@ -606,6 +720,10 @@ export declare class AdminCatalogueController {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     }>;
     deleteProduct(id: string, user: JwtPayload): Promise<{
         id: string;
@@ -631,6 +749,7 @@ export declare class AdminCatalogueController {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
         artworkQualityVerification: boolean;
@@ -638,6 +757,10 @@ export declare class AdminCatalogueController {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     } | {
         success: boolean;
         message: string;
@@ -893,4 +1016,44 @@ export declare class AdminCatalogueController {
         balanceAfter: import("@prisma/client/runtime/library").Decimal;
         performedById: string | null;
     })[]>;
+    listPricingRules(productId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        productId: string;
+        unitPrice: import("@prisma/client/runtime/library").Decimal;
+        minQty: number;
+        maxQty: number;
+        attributeCombination: import("@prisma/client/runtime/library").JsonValue;
+    }[]>;
+    addPricingRule(productId: string, dto: CreatePricingRuleDto, user: JwtPayload): Promise<{
+        id: string;
+        createdAt: Date;
+        productId: string;
+        unitPrice: import("@prisma/client/runtime/library").Decimal;
+        minQty: number;
+        maxQty: number;
+        attributeCombination: import("@prisma/client/runtime/library").JsonValue;
+    }>;
+    updatePricingRule(ruleId: string, dto: UpdatePricingRuleDto, user: JwtPayload): Promise<{
+        id: string;
+        createdAt: Date;
+        productId: string;
+        unitPrice: import("@prisma/client/runtime/library").Decimal;
+        minQty: number;
+        maxQty: number;
+        attributeCombination: import("@prisma/client/runtime/library").JsonValue;
+    }>;
+    deletePricingRule(ruleId: string, user: JwtPayload): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    saveBatchPricingRules(productId: string, dto: BatchPricingRulesDto, user: JwtPayload): Promise<{
+        id: string;
+        createdAt: Date;
+        productId: string;
+        unitPrice: import("@prisma/client/runtime/library").Decimal;
+        minQty: number;
+        maxQty: number;
+        attributeCombination: import("@prisma/client/runtime/library").JsonValue;
+    }[]>;
 }

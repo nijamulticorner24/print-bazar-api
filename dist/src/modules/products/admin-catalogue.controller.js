@@ -157,6 +157,21 @@ let AdminCatalogueController = class AdminCatalogueController {
     async listStockMovements(itemId) {
         return this.catalogueService.listStockMovements(itemId);
     }
+    async listPricingRules(productId) {
+        return this.catalogueService.listPricingRules(productId);
+    }
+    async addPricingRule(productId, dto, user) {
+        return this.catalogueService.addPricingRule(productId, dto, user?.sub);
+    }
+    async updatePricingRule(ruleId, dto, user) {
+        return this.catalogueService.updatePricingRule(ruleId, dto, user?.sub);
+    }
+    async deletePricingRule(ruleId, user) {
+        return this.catalogueService.deletePricingRule(ruleId, user?.sub);
+    }
+    async saveBatchPricingRules(productId, dto, user) {
+        return this.catalogueService.saveBatchPricingRules(productId, dto, user?.sub);
+    }
 };
 exports.AdminCatalogueController = AdminCatalogueController;
 __decorate([
@@ -439,6 +454,52 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AdminCatalogueController.prototype, "listStockMovements", null);
+__decorate([
+    (0, common_1.Get)('catalogue/products/:productId/pricing-rules'),
+    __param(0, (0, common_1.Param)('productId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminCatalogueController.prototype, "listPricingRules", null);
+__decorate([
+    (0, common_1.Post)('catalogue/products/:productId/pricing-rules'),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.ADMIN_MANAGER),
+    __param(0, (0, common_1.Param)('productId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, auth_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, catalogue_dto_1.CreatePricingRuleDto, Object]),
+    __metadata("design:returntype", Promise)
+], AdminCatalogueController.prototype, "addPricingRule", null);
+__decorate([
+    (0, common_1.Put)('catalogue/products/:productId/pricing-rules/:ruleId'),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.ADMIN_MANAGER),
+    __param(0, (0, common_1.Param)('ruleId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, auth_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, catalogue_dto_1.UpdatePricingRuleDto, Object]),
+    __metadata("design:returntype", Promise)
+], AdminCatalogueController.prototype, "updatePricingRule", null);
+__decorate([
+    (0, common_1.Delete)('catalogue/products/:productId/pricing-rules/:ruleId'),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.ADMIN_MANAGER),
+    __param(0, (0, common_1.Param)('ruleId')),
+    __param(1, (0, auth_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminCatalogueController.prototype, "deletePricingRule", null);
+__decorate([
+    (0, common_1.Put)('catalogue/products/:productId/pricing-rules-batch'),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.ADMIN_MANAGER),
+    __param(0, (0, common_1.Param)('productId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, auth_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, catalogue_dto_1.BatchPricingRulesDto, Object]),
+    __metadata("design:returntype", Promise)
+], AdminCatalogueController.prototype, "saveBatchPricingRules", null);
 exports.AdminCatalogueController = AdminCatalogueController = __decorate([
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.RolesGuard),

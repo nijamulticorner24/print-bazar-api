@@ -15,6 +15,7 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const audit_service_1 = require("../audit/audit.service");
 const catalogue_dto_1 = require("./dto/catalogue.dto");
+const client_1 = require("@prisma/client");
 let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueService {
     prisma;
     auditService;
@@ -26,17 +27,35 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
     async listCategories() {
         return this.prisma.productCategory.findMany({
             include: {
+                parent: {
+                    select: { id: true, name: true, slug: true },
+                },
+                children: {
+                    include: {
+                        _count: { select: { products: true } },
+                    },
+                    orderBy: { sortOrder: 'asc' },
+                },
                 _count: {
-                    select: { products: true },
+                    select: { products: true, children: true },
                 },
             },
-            orderBy: { sortOrder: 'asc' },
+            orderBy: [{ sortOrder: 'asc' }],
         });
     }
     async getCategoryById(id) {
         const cat = await this.prisma.productCategory.findUnique({
             where: { id },
             include: {
+                parent: {
+                    select: { id: true, name: true, slug: true },
+                },
+                children: {
+                    include: {
+                        _count: { select: { products: true } },
+                    },
+                    orderBy: { sortOrder: 'asc' },
+                },
                 products: {
                     select: {
                         id: true,
@@ -46,6 +65,9 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                         status: true,
                         basePrice: true,
                     },
+                },
+                _count: {
+                    select: { products: true, children: true },
                 },
             },
         });
@@ -61,14 +83,26 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
         if (existing) {
             throw new common_1.ConflictException(`Category slug '${dto.slug}' already exists`);
         }
+        if (dto.parentId) {
+            const parent = await this.prisma.productCategory.findUnique({
+                where: { id: dto.parentId },
+            });
+            if (!parent) {
+                throw new common_1.NotFoundException(`Parent category with ID '${dto.parentId}' not found`);
+            }
+        }
         const category = await this.prisma.productCategory.create({
             data: {
                 name: dto.name,
                 slug: dto.slug,
                 description: dto.description,
                 image: dto.image,
+                parentId: dto.parentId || null,
                 sortOrder: dto.sortOrder ?? 0,
                 isActive: dto.isActive ?? true,
+            },
+            include: {
+                parent: { select: { id: true, name: true, slug: true } },
             },
         });
         await this.auditService.log({
@@ -90,6 +124,17 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                 throw new common_1.ConflictException(`Category slug '${dto.slug}' already exists`);
             }
         }
+        if (dto.parentId) {
+            if (dto.parentId === id) {
+                throw new common_1.BadRequestException('A category cannot be its own parent');
+            }
+            const parent = await this.prisma.productCategory.findUnique({
+                where: { id: dto.parentId },
+            });
+            if (!parent) {
+                throw new common_1.NotFoundException(`Parent category with ID '${dto.parentId}' not found`);
+            }
+        }
         const updated = await this.prisma.productCategory.update({
             where: { id },
             data: {
@@ -97,8 +142,14 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                 slug: dto.slug,
                 description: dto.description,
                 image: dto.image,
+                parentId: dto.parentId !== undefined ? (dto.parentId || null) : undefined,
                 sortOrder: dto.sortOrder,
                 isActive: dto.isActive,
+            },
+            include: {
+                parent: { select: { id: true, name: true, slug: true } },
+                children: true,
+                _count: { select: { products: true, children: true } },
             },
         });
         await this.auditService.log({
@@ -118,6 +169,12 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
         });
         if (productCount > 0) {
             throw new common_1.BadRequestException(`Cannot delete category '${category.name}' because it contains ${productCount} products. Reassign or delete products first.`);
+        }
+        const subcategoryCount = await this.prisma.productCategory.count({
+            where: { parentId: id },
+        });
+        if (subcategoryCount > 0) {
+            throw new common_1.BadRequestException(`Cannot delete category '${category.name}' because it has ${subcategoryCount} subcategories. Delete or move the subcategories first.`);
         }
         await this.prisma.productCategory.delete({ where: { id } });
         await this.auditService.log({
@@ -241,6 +298,7 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                     trackInventory: dto.trackInventory ?? false,
                     stockQuantity: dto.stockQuantity || 0,
                     lowStockAlert: dto.lowStockAlert || 10,
+                    defaultSize: dto.defaultSize,
                     artworkRequirement: dto.artworkRequirement || 'OPTIONAL',
                     artworkPrice: dto.artworkPrice !== undefined ? dto.artworkPrice : 0,
                     artworkQualityVerification: dto.artworkQualityVerification ?? true,
@@ -248,6 +306,10 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                     referenceImageRequirement: dto.referenceImageRequirement || 'DISABLED',
                     designServiceRequirement: dto.designServiceRequirement || 'DISABLED',
                     designServicePrice: dto.designServicePrice !== undefined ? dto.designServicePrice : 0,
+                    courierCharge: dto.courierCharge !== undefined ? dto.courierCharge : 100,
+                    freeShippingThreshold: dto.freeShippingThreshold !== undefined ? dto.freeShippingThreshold : 1000,
+                    allowCod: dto.allowCod !== undefined ? dto.allowCod : true,
+                    codSurcharge: dto.codSurcharge !== undefined ? dto.codSurcharge : 50,
                 },
             });
             if (dto.images && dto.images.length > 0) {
@@ -352,6 +414,7 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                 trackInventory: dto.trackInventory,
                 stockQuantity: dto.stockQuantity,
                 lowStockAlert: dto.lowStockAlert,
+                defaultSize: dto.defaultSize,
                 isActive: dto.isActive,
                 artworkRequirement: dto.artworkRequirement,
                 artworkPrice: dto.artworkPrice,
@@ -360,6 +423,10 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                 referenceImageRequirement: dto.referenceImageRequirement,
                 designServiceRequirement: dto.designServiceRequirement,
                 designServicePrice: dto.designServicePrice,
+                courierCharge: dto.courierCharge,
+                freeShippingThreshold: dto.freeShippingThreshold,
+                allowCod: dto.allowCod,
+                codSurcharge: dto.codSurcharge,
             },
         });
         await this.auditService.log({
@@ -1017,6 +1084,135 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
             },
             orderBy: { createdAt: 'desc' },
             take: 100,
+        });
+    }
+    async listPricingRules(productId) {
+        await this.getProductById(productId);
+        return this.prisma.pricingMatrix.findMany({
+            where: { productId },
+            orderBy: { minQty: 'asc' },
+        });
+    }
+    async addPricingRule(productId, dto, actorId) {
+        const product = await this.getProductById(productId);
+        const base = Number(product.basePrice);
+        let unitPrice = dto.unitPrice;
+        if (dto.discountPercent !== undefined && (!unitPrice || unitPrice <= 0)) {
+            unitPrice = Math.round(base * (1 - dto.discountPercent / 100) * 10000) / 10000;
+        }
+        if (!unitPrice || unitPrice <= 0) {
+            unitPrice = base;
+        }
+        const combo = {
+            ...(dto.attributeCombination || {}),
+            discountPercent: dto.discountPercent,
+            label: dto.label || (dto.discountPercent ? `${dto.discountPercent}% Volume Offer` : undefined),
+        };
+        const rule = await this.prisma.pricingMatrix.create({
+            data: {
+                productId,
+                minQty: dto.minQty,
+                maxQty: dto.maxQty,
+                unitPrice: new client_1.Prisma.Decimal(unitPrice),
+                attributeCombination: combo,
+            },
+        });
+        await this.auditService.log({
+            actorId,
+            action: 'PRICING_RULE_CREATED',
+            entity: 'PricingMatrix',
+            entityId: rule.id,
+            newState: rule,
+        });
+        return rule;
+    }
+    async updatePricingRule(ruleId, dto, actorId) {
+        const current = await this.prisma.pricingMatrix.findUnique({ where: { id: ruleId } });
+        if (!current) {
+            throw new common_1.NotFoundException(`Pricing rule with ID '${ruleId}' not found`);
+        }
+        const product = await this.getProductById(current.productId);
+        const base = Number(product.basePrice);
+        let unitPrice = dto.unitPrice !== undefined ? dto.unitPrice : Number(current.unitPrice);
+        if (dto.discountPercent !== undefined && (!dto.unitPrice || dto.unitPrice <= 0)) {
+            unitPrice = Math.round(base * (1 - dto.discountPercent / 100) * 10000) / 10000;
+        }
+        const currentCombo = current.attributeCombination || {};
+        const combo = {
+            ...currentCombo,
+            ...(dto.attributeCombination || {}),
+            ...(dto.discountPercent !== undefined ? { discountPercent: dto.discountPercent } : {}),
+            ...(dto.label !== undefined ? { label: dto.label } : {}),
+        };
+        const updated = await this.prisma.pricingMatrix.update({
+            where: { id: ruleId },
+            data: {
+                ...(dto.minQty !== undefined ? { minQty: dto.minQty } : {}),
+                ...(dto.maxQty !== undefined ? { maxQty: dto.maxQty } : {}),
+                unitPrice: new client_1.Prisma.Decimal(unitPrice),
+                attributeCombination: combo,
+            },
+        });
+        await this.auditService.log({
+            actorId,
+            action: 'PRICING_RULE_UPDATED',
+            entity: 'PricingMatrix',
+            entityId: ruleId,
+            previousState: current,
+            newState: updated,
+        });
+        return updated;
+    }
+    async deletePricingRule(ruleId, actorId) {
+        const current = await this.prisma.pricingMatrix.findUnique({ where: { id: ruleId } });
+        if (!current) {
+            throw new common_1.NotFoundException(`Pricing rule with ID '${ruleId}' not found`);
+        }
+        await this.prisma.pricingMatrix.delete({ where: { id: ruleId } });
+        await this.auditService.log({
+            actorId,
+            action: 'PRICING_RULE_DELETED',
+            entity: 'PricingMatrix',
+            entityId: ruleId,
+            previousState: current,
+        });
+        return { success: true, message: 'Pricing rule deleted successfully' };
+    }
+    async saveBatchPricingRules(productId, dto, actorId) {
+        const product = await this.getProductById(productId);
+        const base = Number(product.basePrice);
+        return this.prisma.$transaction(async (tx) => {
+            await tx.pricingMatrix.deleteMany({ where: { productId } });
+            if (dto.rules && dto.rules.length > 0) {
+                for (const r of dto.rules) {
+                    let unitPrice = r.unitPrice;
+                    if (r.discountPercent !== undefined && (!unitPrice || unitPrice <= 0)) {
+                        unitPrice = Math.round(base * (1 - r.discountPercent / 100) * 10000) / 10000;
+                    }
+                    if (!unitPrice || unitPrice <= 0) {
+                        unitPrice = base;
+                    }
+                    const combo = {
+                        ...(r.attributeCombination || {}),
+                        discountPercent: r.discountPercent,
+                        label: r.label || (r.discountPercent ? `${r.discountPercent}% Volume Offer` : undefined),
+                    };
+                    await tx.pricingMatrix.create({
+                        data: {
+                            productId,
+                            minQty: r.minQty,
+                            maxQty: r.maxQty,
+                            unitPrice: new client_1.Prisma.Decimal(unitPrice),
+                            attributeCombination: combo,
+                        },
+                    });
+                }
+            }
+            const updatedRules = await tx.pricingMatrix.findMany({
+                where: { productId },
+                orderBy: { minQty: 'asc' },
+            });
+            return updatedRules;
         });
     }
 };

@@ -327,6 +327,9 @@ model ProductCategory {
   image       String?
   sortOrder   Int       @default(0)
   isActive    Boolean   @default(true)
+  parentId    String?
+  parent      ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    ProductCategory[] @relation("CategoryHierarchy")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -334,6 +337,7 @@ model ProductCategory {
 
   @@index([slug])
   @@index([isActive])
+  @@index([parentId])
 }
 
 model Product {
@@ -356,9 +360,11 @@ model Product {
   seoTitle       String?
   seoDescription String?
   trackInventory Boolean         @default(false)
-  stockQuantity  Int             @default(0)
-  lowStockAlert  Int             @default(10)
-  isActive       Boolean         @default(true)
+  stockQuantity  Int                      @default(0)
+  lowStockAlert  Int                      @default(10)
+  isActive       Boolean                  @default(true)
+  // Default Fixed Product Size (Admin-configured; read-only for customer storefront)
+  defaultSize    String?
 
   // Dynamic Product Flow Engine Configuration (Admin-Controlled)
   artworkRequirement         ProductOptionRequirement @default(OPTIONAL)
@@ -368,6 +374,12 @@ model Product {
   referenceImageRequirement  ProductOptionRequirement @default(DISABLED)
   designServiceRequirement   ProductOptionRequirement @default(DISABLED)
   designServicePrice         Decimal?                 @default(0.00) @db.Decimal(12, 2)
+
+  // Courier & COD Charges Configuration (Tab 5: Pricing Rules & Offers)
+  courierCharge              Decimal?                 @default(100.00) @db.Decimal(12, 2)
+  freeShippingThreshold      Decimal?                 @default(1000.00) @db.Decimal(12, 2)
+  allowCod                   Boolean                  @default(true)
+  codSurcharge               Decimal?                 @default(50.00) @db.Decimal(12, 2)
 
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt

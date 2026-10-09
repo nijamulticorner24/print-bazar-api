@@ -83,6 +83,10 @@ export class CreateCategoryDto {
   @IsOptional()
   image?: string;
 
+  @IsString()
+  @IsOptional()
+  parentId?: string | null;
+
   @IsNumber()
   @IsOptional()
   sortOrder?: number;
@@ -108,6 +112,10 @@ export class UpdateCategoryDto {
   @IsString()
   @IsOptional()
   image?: string;
+
+  @IsString()
+  @IsOptional()
+  parentId?: string | null;
 
   @IsNumber()
   @IsOptional()
@@ -428,6 +436,10 @@ export class CreateProductDto {
   @IsOptional()
   lowStockAlert?: number;
 
+  @IsString()
+  @IsOptional()
+  defaultSize?: string;
+
   // Dynamic Product Flow Engine Configuration (Admin-Controlled)
   @IsEnum(ProductOptionRequirementDto)
   @IsOptional()
@@ -459,6 +471,26 @@ export class CreateProductDto {
   @Min(0)
   @IsOptional()
   designServicePrice?: number;
+
+  // Courier & COD Charges Configuration (Tab 5: Pricing Rules & Offers)
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  courierCharge?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  freeShippingThreshold?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  allowCod?: boolean;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  codSurcharge?: number;
 
   @IsArray()
   @IsOptional()
@@ -555,6 +587,10 @@ export class UpdateProductDto {
   @IsOptional()
   lowStockAlert?: number;
 
+  @IsString()
+  @IsOptional()
+  defaultSize?: string;
+
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
@@ -590,6 +626,26 @@ export class UpdateProductDto {
   @Min(0)
   @IsOptional()
   designServicePrice?: number;
+
+  // Courier & COD Charges Configuration (Tab 5: Pricing Rules & Offers)
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  courierCharge?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  freeShippingThreshold?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  allowCod?: boolean;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  codSurcharge?: number;
 }
 
 // ==========================================
@@ -694,3 +750,67 @@ export class RecordStockMovementDto {
   @IsOptional()
   notes?: string;
 }
+
+// ==========================================
+// PRICING RULES / QUANTITY TIER OFFER DTOS
+// ==========================================
+
+export class CreatePricingRuleDto {
+  @IsNumber()
+  @Min(1)
+  minQty: number;
+
+  @IsNumber()
+  @Min(1)
+  maxQty: number;
+
+  @IsNumber()
+  @IsOptional()
+  discountPercent?: number;
+
+  @IsNumber()
+  @IsOptional()
+  unitPrice?: number;
+
+  @IsString()
+  @IsOptional()
+  label?: string;
+
+  @IsOptional()
+  attributeCombination?: Record<string, any>;
+}
+
+export class UpdatePricingRuleDto {
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  minQty?: number;
+
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  maxQty?: number;
+
+  @IsNumber()
+  @IsOptional()
+  discountPercent?: number;
+
+  @IsNumber()
+  @IsOptional()
+  unitPrice?: number;
+
+  @IsString()
+  @IsOptional()
+  label?: string;
+
+  @IsOptional()
+  attributeCombination?: Record<string, any>;
+}
+
+export class BatchPricingRulesDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePricingRuleDto)
+  rules: CreatePricingRuleDto[];
+}
+

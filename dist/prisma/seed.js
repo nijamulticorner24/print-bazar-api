@@ -234,6 +234,7 @@ async function main() {
             minQuantity: 100,
             maxQuantity: 10000,
             productionDays: 2,
+            defaultSize: '89 mm x 54 mm (Standard Visiting Card)',
             tags: ['Visiting Cards', 'Spot UV', 'Velvet', 'Corporate'],
         },
         create: {
@@ -248,6 +249,7 @@ async function main() {
             minQuantity: 100,
             maxQuantity: 10000,
             productionDays: 2,
+            defaultSize: '89 mm x 54 mm (Standard Visiting Card)',
             sortOrder: 1,
             isFeatured: true,
             tags: ['Visiting Cards', 'Spot UV', 'Velvet', 'Corporate'],
@@ -337,6 +339,39 @@ async function main() {
                 ],
             },
         },
+    });
+    await prisma.pricingMatrix.deleteMany({ where: { productId: prodBizCards.id } });
+    await prisma.pricingMatrix.createMany({
+        data: [
+            {
+                productId: prodBizCards.id,
+                minQty: 100,
+                maxQty: 499,
+                attributeCombination: { discountPercent: 0, label: 'Base Rate (100–499 pcs)' },
+                unitPrice: 1.50,
+            },
+            {
+                productId: prodBizCards.id,
+                minQty: 500,
+                maxQty: 999,
+                attributeCombination: { discountPercent: 5, label: '5% OFF Volume Savings (500–999 pcs)' },
+                unitPrice: 1.425,
+            },
+            {
+                productId: prodBizCards.id,
+                minQty: 1000,
+                maxQty: 4999,
+                attributeCombination: { discountPercent: 10, label: '10% OFF Volume Savings (1,000–4,999 pcs)' },
+                unitPrice: 1.35,
+            },
+            {
+                productId: prodBizCards.id,
+                minQty: 5000,
+                maxQty: 100000,
+                attributeCombination: { discountPercent: 18, label: '18% OFF Bulk Fleet Savings (5,000+ pcs)' },
+                unitPrice: 1.23,
+            },
+        ],
     });
     const prodBox = await prisma.product.upsert({
         where: { slug: 'custom-rigid-box' },

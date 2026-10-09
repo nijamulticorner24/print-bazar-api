@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RecordStockMovementDto = exports.UpdateInventoryItemDto = exports.CreateInventoryItemDto = exports.UpdateProductDto = exports.CreateProductDto = exports.UpdateProductImageDto = exports.CreateProductImageDto = exports.UpdateProductFieldDto = exports.CreateProductFieldDto = exports.UpdateFieldOptionDto = exports.CreateFieldOptionDto = exports.UpdateCategoryDto = exports.CreateCategoryDto = exports.StockMovementTypeDto = exports.InventoryCategoryDto = exports.ProductFieldTypeDto = exports.ProductOptionRequirementDto = exports.ProductStatusDto = void 0;
+exports.BatchPricingRulesDto = exports.UpdatePricingRuleDto = exports.CreatePricingRuleDto = exports.RecordStockMovementDto = exports.UpdateInventoryItemDto = exports.CreateInventoryItemDto = exports.UpdateProductDto = exports.CreateProductDto = exports.UpdateProductImageDto = exports.CreateProductImageDto = exports.UpdateProductFieldDto = exports.CreateProductFieldDto = exports.UpdateFieldOptionDto = exports.CreateFieldOptionDto = exports.UpdateCategoryDto = exports.CreateCategoryDto = exports.StockMovementTypeDto = exports.InventoryCategoryDto = exports.ProductFieldTypeDto = exports.ProductOptionRequirementDto = exports.ProductStatusDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 var ProductStatusDto;
@@ -67,6 +67,7 @@ class CreateCategoryDto {
     slug;
     description;
     image;
+    parentId;
     sortOrder;
     isActive;
 }
@@ -92,6 +93,11 @@ __decorate([
     __metadata("design:type", String)
 ], CreateCategoryDto.prototype, "image", void 0);
 __decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], CreateCategoryDto.prototype, "parentId", void 0);
+__decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
@@ -106,6 +112,7 @@ class UpdateCategoryDto {
     slug;
     description;
     image;
+    parentId;
     sortOrder;
     isActive;
 }
@@ -130,6 +137,11 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateCategoryDto.prototype, "image", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], UpdateCategoryDto.prototype, "parentId", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.IsOptional)(),
@@ -475,6 +487,7 @@ class CreateProductDto {
     trackInventory;
     stockQuantity;
     lowStockAlert;
+    defaultSize;
     artworkRequirement;
     artworkPrice;
     artworkQualityVerification;
@@ -482,6 +495,10 @@ class CreateProductDto {
     referenceImageRequirement;
     designServiceRequirement;
     designServicePrice;
+    courierCharge;
+    freeShippingThreshold;
+    allowCod;
+    codSurcharge;
     images;
     fields;
 }
@@ -586,6 +603,11 @@ __decorate([
     __metadata("design:type", Number)
 ], CreateProductDto.prototype, "lowStockAlert", void 0);
 __decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateProductDto.prototype, "defaultSize", void 0);
+__decorate([
     (0, class_validator_1.IsEnum)(ProductOptionRequirementDto),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
@@ -624,6 +646,29 @@ __decorate([
     __metadata("design:type", Number)
 ], CreateProductDto.prototype, "designServicePrice", void 0);
 __decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateProductDto.prototype, "courierCharge", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateProductDto.prototype, "freeShippingThreshold", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateProductDto.prototype, "allowCod", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateProductDto.prototype, "codSurcharge", void 0);
+__decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.ValidateNested)({ each: true }),
@@ -657,6 +702,7 @@ class UpdateProductDto {
     trackInventory;
     stockQuantity;
     lowStockAlert;
+    defaultSize;
     isActive;
     artworkRequirement;
     artworkPrice;
@@ -665,6 +711,10 @@ class UpdateProductDto {
     referenceImageRequirement;
     designServiceRequirement;
     designServicePrice;
+    courierCharge;
+    freeShippingThreshold;
+    allowCod;
+    codSurcharge;
 }
 exports.UpdateProductDto = UpdateProductDto;
 __decorate([
@@ -768,6 +818,11 @@ __decorate([
     __metadata("design:type", Number)
 ], UpdateProductDto.prototype, "lowStockAlert", void 0);
 __decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateProductDto.prototype, "defaultSize", void 0);
+__decorate([
     (0, class_validator_1.IsBoolean)(),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
@@ -810,6 +865,29 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], UpdateProductDto.prototype, "designServicePrice", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateProductDto.prototype, "courierCharge", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateProductDto.prototype, "freeShippingThreshold", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], UpdateProductDto.prototype, "allowCod", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateProductDto.prototype, "codSurcharge", void 0);
 class CreateInventoryItemDto {
     name;
     sku;
@@ -958,4 +1036,92 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], RecordStockMovementDto.prototype, "notes", void 0);
+class CreatePricingRuleDto {
+    minQty;
+    maxQty;
+    discountPercent;
+    unitPrice;
+    label;
+    attributeCombination;
+}
+exports.CreatePricingRuleDto = CreatePricingRuleDto;
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreatePricingRuleDto.prototype, "minQty", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreatePricingRuleDto.prototype, "maxQty", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreatePricingRuleDto.prototype, "discountPercent", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreatePricingRuleDto.prototype, "unitPrice", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreatePricingRuleDto.prototype, "label", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], CreatePricingRuleDto.prototype, "attributeCombination", void 0);
+class UpdatePricingRuleDto {
+    minQty;
+    maxQty;
+    discountPercent;
+    unitPrice;
+    label;
+    attributeCombination;
+}
+exports.UpdatePricingRuleDto = UpdatePricingRuleDto;
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdatePricingRuleDto.prototype, "minQty", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdatePricingRuleDto.prototype, "maxQty", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdatePricingRuleDto.prototype, "discountPercent", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdatePricingRuleDto.prototype, "unitPrice", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdatePricingRuleDto.prototype, "label", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], UpdatePricingRuleDto.prototype, "attributeCombination", void 0);
+class BatchPricingRulesDto {
+    rules;
+}
+exports.BatchPricingRulesDto = BatchPricingRulesDto;
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => CreatePricingRuleDto),
+    __metadata("design:type", Array)
+], BatchPricingRulesDto.prototype, "rules", void 0);
 //# sourceMappingURL=catalogue.dto.js.map

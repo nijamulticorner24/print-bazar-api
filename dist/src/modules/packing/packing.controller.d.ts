@@ -281,6 +281,7 @@ export declare class PackingController {
                 trackInventory: boolean;
                 stockQuantity: number;
                 lowStockAlert: number;
+                defaultSize: string | null;
                 artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
                 artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
                 artworkQualityVerification: boolean;
@@ -288,6 +289,10 @@ export declare class PackingController {
                 referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
                 designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
                 designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+                courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+                freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+                allowCod: boolean;
+                codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
             };
             artworkVersions: {
                 id: string;

@@ -322,6 +322,7 @@ export declare class PackingService {
                 trackInventory: boolean;
                 stockQuantity: number;
                 lowStockAlert: number;
+                defaultSize: string | null;
                 artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
                 artworkPrice: Prisma.Decimal | null;
                 artworkQualityVerification: boolean;
@@ -329,6 +330,10 @@ export declare class PackingService {
                 referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
                 designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
                 designServicePrice: Prisma.Decimal | null;
+                courierCharge: Prisma.Decimal | null;
+                freeShippingThreshold: Prisma.Decimal | null;
+                allowCod: boolean;
+                codSurcharge: Prisma.Decimal | null;
             };
             artworkVersions: {
                 id: string;

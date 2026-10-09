@@ -4,6 +4,12 @@ export declare class ProductsController {
     constructor(productsService: ProductsService);
     listProducts(categoryId?: string, search?: string): Promise<({
         category: {
+            parent: {
+                id: string;
+                name: string;
+                slug: string;
+            } | null;
+        } & {
             id: string;
             isActive: boolean;
             createdAt: Date;
@@ -13,6 +19,7 @@ export declare class ProductsController {
             description: string | null;
             image: string | null;
             sortOrder: number;
+            parentId: string | null;
         };
         images: {
             id: string;
@@ -82,6 +89,7 @@ export declare class ProductsController {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
         artworkQualityVerification: boolean;
@@ -89,9 +97,35 @@ export declare class ProductsController {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     })[]>;
     listCategories(): Promise<({
+        parent: {
+            id: string;
+            name: string;
+            slug: string;
+        } | null;
+        children: ({
+            _count: {
+                products: number;
+            };
+        } & {
+            id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            slug: string;
+            description: string | null;
+            image: string | null;
+            sortOrder: number;
+            parentId: string | null;
+        })[];
         _count: {
+            children: number;
             products: number;
         };
     } & {
@@ -104,9 +138,16 @@ export declare class ProductsController {
         description: string | null;
         image: string | null;
         sortOrder: number;
+        parentId: string | null;
     })[]>;
     getProductBySlug(slug: string): Promise<{
         category: {
+            parent: {
+                id: string;
+                name: string;
+                slug: string;
+            } | null;
+        } & {
             id: string;
             isActive: boolean;
             createdAt: Date;
@@ -116,6 +157,7 @@ export declare class ProductsController {
             description: string | null;
             image: string | null;
             sortOrder: number;
+            parentId: string | null;
         };
         images: {
             id: string;
@@ -194,6 +236,7 @@ export declare class ProductsController {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
         artworkQualityVerification: boolean;
@@ -201,5 +244,9 @@ export declare class ProductsController {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     }>;
 }

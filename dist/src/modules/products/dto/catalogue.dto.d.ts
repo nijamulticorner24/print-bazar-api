@@ -48,6 +48,7 @@ export declare class CreateCategoryDto {
     slug: string;
     description?: string;
     image?: string;
+    parentId?: string | null;
     sortOrder?: number;
     isActive?: boolean;
 }
@@ -56,6 +57,7 @@ export declare class UpdateCategoryDto {
     slug?: string;
     description?: string;
     image?: string;
+    parentId?: string | null;
     sortOrder?: number;
     isActive?: boolean;
 }
@@ -145,6 +147,7 @@ export declare class CreateProductDto {
     trackInventory?: boolean;
     stockQuantity?: number;
     lowStockAlert?: number;
+    defaultSize?: string;
     artworkRequirement?: ProductOptionRequirementDto;
     artworkPrice?: number;
     artworkQualityVerification?: boolean;
@@ -152,6 +155,10 @@ export declare class CreateProductDto {
     referenceImageRequirement?: ProductOptionRequirementDto;
     designServiceRequirement?: ProductOptionRequirementDto;
     designServicePrice?: number;
+    courierCharge?: number;
+    freeShippingThreshold?: number;
+    allowCod?: boolean;
+    codSurcharge?: number;
     images?: CreateProductImageDto[];
     fields?: CreateProductFieldDto[];
 }
@@ -175,6 +182,7 @@ export declare class UpdateProductDto {
     trackInventory?: boolean;
     stockQuantity?: number;
     lowStockAlert?: number;
+    defaultSize?: string;
     isActive?: boolean;
     artworkRequirement?: ProductOptionRequirementDto;
     artworkPrice?: number;
@@ -183,6 +191,10 @@ export declare class UpdateProductDto {
     referenceImageRequirement?: ProductOptionRequirementDto;
     designServiceRequirement?: ProductOptionRequirementDto;
     designServicePrice?: number;
+    courierCharge?: number;
+    freeShippingThreshold?: number;
+    allowCod?: boolean;
+    codSurcharge?: number;
 }
 export declare class CreateInventoryItemDto {
     name: string;
@@ -212,4 +224,23 @@ export declare class RecordStockMovementDto {
     referenceType?: string;
     referenceId?: string;
     notes?: string;
+}
+export declare class CreatePricingRuleDto {
+    minQty: number;
+    maxQty: number;
+    discountPercent?: number;
+    unitPrice?: number;
+    label?: string;
+    attributeCombination?: Record<string, any>;
+}
+export declare class UpdatePricingRuleDto {
+    minQty?: number;
+    maxQty?: number;
+    discountPercent?: number;
+    unitPrice?: number;
+    label?: string;
+    attributeCombination?: Record<string, any>;
+}
+export declare class BatchPricingRulesDto {
+    rules: CreatePricingRuleDto[];
 }

@@ -6,10 +6,21 @@ export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listProducts(categoryId?: string, search?: string) {
+    let categoryCondition: any = undefined;
+    if (categoryId) {
+      // Find subcategories if any
+      const subcats = await this.prisma.productCategory.findMany({
+        where: { parentId: categoryId, isActive: true },
+        select: { id: true },
+      });
+      const catIds = [categoryId, ...subcats.map((s) => s.id)];
+      categoryCondition = { categoryId: { in: catIds } };
+    }
+
     const where: any = {
       isActive: true,
       status: 'PUBLISHED',
-      ...(categoryId ? { categoryId } : {}),
+      ...(categoryCondition || {}),
       ...(search
         ? {
             OR: [
@@ -24,7 +35,13 @@ export class ProductsService {
     return this.prisma.product.findMany({
       where,
       include: {
-        category: true,
+        category: {
+          include: {
+            parent: {
+              select: { id: true, name: true, slug: true },
+            },
+          },
+        },
         images: {
           orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
         },
@@ -51,7 +68,13 @@ export class ProductsService {
         isActive: true,
       },
       include: {
-        category: true,
+        category: {
+          include: {
+            parent: {
+              select: { id: true, name: true, slug: true },
+            },
+          },
+        },
         images: {
           orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
         },
@@ -80,15 +103,34 @@ export class ProductsService {
     return this.prisma.productCategory.findMany({
       where: { isActive: true },
       include: {
+        parent: {
+          select: { id: true, name: true, slug: true },
+        },
+        children: {
+          where: { isActive: true },
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            _count: {
+              select: {
+                products: {
+                  where: { status: 'PUBLISHED', isActive: true },
+                },
+              },
+            },
+          },
+        },
         _count: {
           select: {
             products: {
               where: { status: 'PUBLISHED', isActive: true },
             },
+            children: {
+              where: { isActive: true },
+            },
           },
         },
       },
-      orderBy: { sortOrder: 'asc' },
+      orderBy: [{ sortOrder: 'asc' }],
     });
   }
 }

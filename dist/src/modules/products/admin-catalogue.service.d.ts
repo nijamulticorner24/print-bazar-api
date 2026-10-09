@@ -1,6 +1,6 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { CreateCategoryDto, UpdateCategoryDto, CreateProductDto, UpdateProductDto, CreateProductFieldDto, UpdateProductFieldDto, CreateFieldOptionDto, UpdateFieldOptionDto, CreateProductImageDto, CreateInventoryItemDto, UpdateInventoryItemDto, RecordStockMovementDto } from './dto/catalogue.dto';
+import { CreateCategoryDto, UpdateCategoryDto, CreateProductDto, UpdateProductDto, CreateProductFieldDto, UpdateProductFieldDto, CreateFieldOptionDto, UpdateFieldOptionDto, CreateProductImageDto, CreateInventoryItemDto, UpdateInventoryItemDto, RecordStockMovementDto, CreatePricingRuleDto, UpdatePricingRuleDto, BatchPricingRulesDto } from './dto/catalogue.dto';
 import { Prisma } from '@prisma/client';
 export declare class AdminCatalogueService {
     private readonly prisma;
@@ -8,7 +8,29 @@ export declare class AdminCatalogueService {
     private readonly logger;
     constructor(prisma: PrismaService, auditService: AuditService);
     listCategories(): Promise<({
+        parent: {
+            id: string;
+            name: string;
+            slug: string;
+        } | null;
+        children: ({
+            _count: {
+                products: number;
+            };
+        } & {
+            id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            slug: string;
+            description: string | null;
+            image: string | null;
+            sortOrder: number;
+            parentId: string | null;
+        })[];
         _count: {
+            children: number;
             products: number;
         };
     } & {
@@ -21,8 +43,30 @@ export declare class AdminCatalogueService {
         description: string | null;
         image: string | null;
         sortOrder: number;
+        parentId: string | null;
     })[]>;
     getCategoryById(id: string): Promise<{
+        parent: {
+            id: string;
+            name: string;
+            slug: string;
+        } | null;
+        children: ({
+            _count: {
+                products: number;
+            };
+        } & {
+            id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            slug: string;
+            description: string | null;
+            image: string | null;
+            sortOrder: number;
+            parentId: string | null;
+        })[];
         products: {
             id: string;
             name: string;
@@ -31,6 +75,10 @@ export declare class AdminCatalogueService {
             status: import(".prisma/client").$Enums.ProductStatus;
             basePrice: Prisma.Decimal;
         }[];
+        _count: {
+            children: number;
+            products: number;
+        };
     } & {
         id: string;
         isActive: boolean;
@@ -41,8 +89,15 @@ export declare class AdminCatalogueService {
         description: string | null;
         image: string | null;
         sortOrder: number;
+        parentId: string | null;
     }>;
     createCategory(dto: CreateCategoryDto, actorId?: string): Promise<{
+        parent: {
+            id: string;
+            name: string;
+            slug: string;
+        } | null;
+    } & {
         id: string;
         isActive: boolean;
         createdAt: Date;
@@ -52,8 +107,31 @@ export declare class AdminCatalogueService {
         description: string | null;
         image: string | null;
         sortOrder: number;
+        parentId: string | null;
     }>;
     updateCategory(id: string, dto: UpdateCategoryDto, actorId?: string): Promise<{
+        parent: {
+            id: string;
+            name: string;
+            slug: string;
+        } | null;
+        children: {
+            id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            slug: string;
+            description: string | null;
+            image: string | null;
+            sortOrder: number;
+            parentId: string | null;
+        }[];
+        _count: {
+            children: number;
+            products: number;
+        };
+    } & {
         id: string;
         isActive: boolean;
         createdAt: Date;
@@ -63,6 +141,7 @@ export declare class AdminCatalogueService {
         description: string | null;
         image: string | null;
         sortOrder: number;
+        parentId: string | null;
     }>;
     deleteCategory(id: string, actorId?: string): Promise<{
         success: boolean;
@@ -149,6 +228,7 @@ export declare class AdminCatalogueService {
             trackInventory: boolean;
             stockQuantity: number;
             lowStockAlert: number;
+            defaultSize: string | null;
             artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
             artworkPrice: Prisma.Decimal | null;
             artworkQualityVerification: boolean;
@@ -156,6 +236,10 @@ export declare class AdminCatalogueService {
             referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
             designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
             designServicePrice: Prisma.Decimal | null;
+            courierCharge: Prisma.Decimal | null;
+            freeShippingThreshold: Prisma.Decimal | null;
+            allowCod: boolean;
+            codSurcharge: Prisma.Decimal | null;
         })[];
         meta: {
             total: number;
@@ -175,6 +259,7 @@ export declare class AdminCatalogueService {
             description: string | null;
             image: string | null;
             sortOrder: number;
+            parentId: string | null;
         };
         images: {
             id: string;
@@ -253,6 +338,7 @@ export declare class AdminCatalogueService {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: Prisma.Decimal | null;
         artworkQualityVerification: boolean;
@@ -260,6 +346,10 @@ export declare class AdminCatalogueService {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: Prisma.Decimal | null;
+        courierCharge: Prisma.Decimal | null;
+        freeShippingThreshold: Prisma.Decimal | null;
+        allowCod: boolean;
+        codSurcharge: Prisma.Decimal | null;
     }>;
     createProduct(dto: CreateProductDto, actorId?: string): Promise<{
         category: {
@@ -272,6 +362,7 @@ export declare class AdminCatalogueService {
             description: string | null;
             image: string | null;
             sortOrder: number;
+            parentId: string | null;
         };
         images: {
             id: string;
@@ -350,6 +441,7 @@ export declare class AdminCatalogueService {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: Prisma.Decimal | null;
         artworkQualityVerification: boolean;
@@ -357,6 +449,10 @@ export declare class AdminCatalogueService {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: Prisma.Decimal | null;
+        courierCharge: Prisma.Decimal | null;
+        freeShippingThreshold: Prisma.Decimal | null;
+        allowCod: boolean;
+        codSurcharge: Prisma.Decimal | null;
     }>;
     updateProduct(id: string, dto: UpdateProductDto, actorId?: string): Promise<{
         category: {
@@ -369,6 +465,7 @@ export declare class AdminCatalogueService {
             description: string | null;
             image: string | null;
             sortOrder: number;
+            parentId: string | null;
         };
         images: {
             id: string;
@@ -447,6 +544,7 @@ export declare class AdminCatalogueService {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: Prisma.Decimal | null;
         artworkQualityVerification: boolean;
@@ -454,6 +552,10 @@ export declare class AdminCatalogueService {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: Prisma.Decimal | null;
+        courierCharge: Prisma.Decimal | null;
+        freeShippingThreshold: Prisma.Decimal | null;
+        allowCod: boolean;
+        codSurcharge: Prisma.Decimal | null;
     }>;
     duplicateProduct(id: string, actorId?: string): Promise<{
         category: {
@@ -466,6 +568,7 @@ export declare class AdminCatalogueService {
             description: string | null;
             image: string | null;
             sortOrder: number;
+            parentId: string | null;
         };
         images: {
             id: string;
@@ -544,6 +647,7 @@ export declare class AdminCatalogueService {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: Prisma.Decimal | null;
         artworkQualityVerification: boolean;
@@ -551,6 +655,10 @@ export declare class AdminCatalogueService {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: Prisma.Decimal | null;
+        courierCharge: Prisma.Decimal | null;
+        freeShippingThreshold: Prisma.Decimal | null;
+        allowCod: boolean;
+        codSurcharge: Prisma.Decimal | null;
     }>;
     publishProduct(id: string, actorId?: string): Promise<{
         id: string;
@@ -576,6 +684,7 @@ export declare class AdminCatalogueService {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: Prisma.Decimal | null;
         artworkQualityVerification: boolean;
@@ -583,6 +692,10 @@ export declare class AdminCatalogueService {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: Prisma.Decimal | null;
+        courierCharge: Prisma.Decimal | null;
+        freeShippingThreshold: Prisma.Decimal | null;
+        allowCod: boolean;
+        codSurcharge: Prisma.Decimal | null;
     }>;
     archiveProduct(id: string, actorId?: string): Promise<{
         id: string;
@@ -608,6 +721,7 @@ export declare class AdminCatalogueService {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: Prisma.Decimal | null;
         artworkQualityVerification: boolean;
@@ -615,6 +729,10 @@ export declare class AdminCatalogueService {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: Prisma.Decimal | null;
+        courierCharge: Prisma.Decimal | null;
+        freeShippingThreshold: Prisma.Decimal | null;
+        allowCod: boolean;
+        codSurcharge: Prisma.Decimal | null;
     }>;
     deleteProduct(id: string, actorId?: string): Promise<{
         id: string;
@@ -640,6 +758,7 @@ export declare class AdminCatalogueService {
         trackInventory: boolean;
         stockQuantity: number;
         lowStockAlert: number;
+        defaultSize: string | null;
         artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         artworkPrice: Prisma.Decimal | null;
         artworkQualityVerification: boolean;
@@ -647,6 +766,10 @@ export declare class AdminCatalogueService {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: Prisma.Decimal | null;
+        courierCharge: Prisma.Decimal | null;
+        freeShippingThreshold: Prisma.Decimal | null;
+        allowCod: boolean;
+        codSurcharge: Prisma.Decimal | null;
     } | {
         success: boolean;
         message: string;
@@ -903,4 +1026,44 @@ export declare class AdminCatalogueService {
         balanceAfter: Prisma.Decimal;
         performedById: string | null;
     })[]>;
+    listPricingRules(productId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        productId: string;
+        unitPrice: Prisma.Decimal;
+        minQty: number;
+        maxQty: number;
+        attributeCombination: Prisma.JsonValue;
+    }[]>;
+    addPricingRule(productId: string, dto: CreatePricingRuleDto, actorId?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        productId: string;
+        unitPrice: Prisma.Decimal;
+        minQty: number;
+        maxQty: number;
+        attributeCombination: Prisma.JsonValue;
+    }>;
+    updatePricingRule(ruleId: string, dto: UpdatePricingRuleDto, actorId?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        productId: string;
+        unitPrice: Prisma.Decimal;
+        minQty: number;
+        maxQty: number;
+        attributeCombination: Prisma.JsonValue;
+    }>;
+    deletePricingRule(ruleId: string, actorId?: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    saveBatchPricingRules(productId: string, dto: BatchPricingRulesDto, actorId?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        productId: string;
+        unitPrice: Prisma.Decimal;
+        minQty: number;
+        maxQty: number;
+        attributeCombination: Prisma.JsonValue;
+    }[]>;
 }

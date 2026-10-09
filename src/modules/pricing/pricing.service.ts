@@ -16,12 +16,21 @@ export interface QuoteCalculationRequestDto {
   hasReferenceImage?: boolean;
   shippingPincode?: string;
   isInterState?: boolean;
+  deliveryMethod?: 'COURIER' | 'STORE_PICKUP' | 'LOCAL_EXPRESS_BIKE';
+  paymentMethod?: 'FULL' | 'SPLIT_50' | 'COD' | 'ONLINE';
+  isCod?: boolean;
 }
 
 export interface QuoteItemBreakdown {
   basePrice: number;
+  originalBasePrice: number;
+  effectiveBasePrice: number;
   quantity: number;
+  baseSubtotal: number;
   optionsCost: number;
+  dynamicModifiersTotal: number;
+  discountAmount: number;
+  discountPercent: number;
   artworkFee: number;
   designServiceFee: number;
   artworkRequirement: string;
@@ -33,9 +42,32 @@ export interface QuoteItemBreakdown {
   sgst: number;
   igst: number;
   totalTax: number;
+  courierCharge: number;
+  freeShippingThreshold: number;
   estimatedShipping: number;
+  allowCod: boolean;
+  codSurcharge: number;
+  codCharge: number;
+  deliveryMethod: string;
+  paymentMethod: string;
   grandTotal: number;
   productionDays: number;
+  appliedOffer?: {
+    offerId: string;
+    minQty: number;
+    maxQty: number;
+    discountPercent: number;
+    offerName: string;
+    savingsAmount: number;
+  } | null;
+  availableOffers?: Array<{
+    id: string;
+    minQty: number;
+    maxQty: number;
+    discountPercent: number;
+    unitPrice: number;
+    label: string;
+  }>;
   selectedOptionsSummary: Array<{
     optionName: string;
     optionCode: string;
@@ -71,7 +103,9 @@ export class PricingService {
             values: true,
           },
         },
-        pricingMatrices: true,
+        pricingMatrices: {
+          orderBy: { minQty: 'asc' },
+        },
       },
     });
 
@@ -90,7 +124,9 @@ export class PricingService {
               values: true,
             },
           },
-          pricingMatrices: true,
+          pricingMatrices: {
+            orderBy: { minQty: 'asc' },
+          },
         },
       });
     }
@@ -237,20 +273,98 @@ export class PricingService {
       }
     }
 
-    // 3. Matrix & Tier Pricing Calculation
-    let baseUnitPrice = Number(product.basePrice);
+    // 3. Matrix & Quantity Tier Offer Calculation
+    const originalBasePrice = Number(product.basePrice);
+    let baseUnitPrice = originalBasePrice;
+    let appliedOffer: QuoteItemBreakdown['appliedOffer'] = null;
+    const availableOffers: NonNullable<QuoteItemBreakdown['availableOffers']> = [];
 
-    if (product.pricingModel === 'MATRIX' && product.pricingMatrices.length > 0) {
-      const matchingMatrix = product.pricingMatrices.find(
-        (m) => dto.quantity >= m.minQty && dto.quantity <= m.maxQty,
-      );
-      if (matchingMatrix) {
-        baseUnitPrice = Number(matchingMatrix.unitPrice);
+    if (product.pricingMatrices && product.pricingMatrices.length > 0) {
+      const sortedMatrices = [...product.pricingMatrices].sort((a, b) => a.minQty - b.minQty);
+
+      for (const m of sortedMatrices) {
+        const combo = (m.attributeCombination as any) || {};
+        const ruleUnitPrice = Number(m.unitPrice);
+        let discountPercent =
+          combo.discountPercent !== undefined ? Number(combo.discountPercent) : 0;
+
+        if (!discountPercent && ruleUnitPrice < originalBasePrice && originalBasePrice > 0) {
+          discountPercent = Math.round(((originalBasePrice - ruleUnitPrice) / originalBasePrice) * 100);
+        }
+
+        const label =
+          combo.label ||
+          combo.offerName ||
+          (discountPercent > 0
+            ? `${discountPercent}% OFF (${m.minQty.toLocaleString()}–${m.maxQty.toLocaleString()} units)`
+            : `Special Tier Price (${m.minQty.toLocaleString()}–${m.maxQty.toLocaleString()} units)`);
+
+        availableOffers.push({
+          id: m.id,
+          minQty: m.minQty,
+          maxQty: m.maxQty,
+          discountPercent,
+          unitPrice: ruleUnitPrice,
+          label,
+        });
+
+        // If current quantity qualifies for this tier
+        if (dto.quantity >= m.minQty && (!m.maxQty || dto.quantity <= m.maxQty)) {
+          if (discountPercent > 0) {
+            baseUnitPrice = Math.round(originalBasePrice * (1 - discountPercent / 100) * 10000) / 10000;
+          } else if (ruleUnitPrice > 0) {
+            baseUnitPrice = ruleUnitPrice;
+            if (originalBasePrice > ruleUnitPrice) {
+              discountPercent = Math.round(((originalBasePrice - ruleUnitPrice) / originalBasePrice) * 100);
+            }
+          }
+
+          const savingsPerUnit = Math.max(0, originalBasePrice - baseUnitPrice);
+          appliedOffer = {
+            offerId: m.id,
+            minQty: m.minQty,
+            maxQty: m.maxQty,
+            discountPercent,
+            offerName: label,
+            savingsAmount: Math.round(savingsPerUnit * dto.quantity * 100) / 100,
+          };
+        }
       }
-    } else if (product.pricingModel === 'TIERED') {
-      if (dto.quantity >= 5000) baseUnitPrice *= 0.82;
-      else if (dto.quantity >= 1000) baseUnitPrice *= 0.90;
-      else if (dto.quantity >= 500) baseUnitPrice *= 0.95;
+    }
+
+    // Default volume savings tier if no explicit pricing matrix matched
+    if (!appliedOffer) {
+      if (dto.quantity >= 5000) {
+        baseUnitPrice = Math.round(originalBasePrice * 0.82 * 10000) / 10000;
+        appliedOffer = {
+          offerId: 'tier-5000',
+          minQty: 5000,
+          maxQty: 100000,
+          discountPercent: 18,
+          offerName: 'Volume Tier Savings (18% OFF)',
+          savingsAmount: Math.round(originalBasePrice * 0.18 * dto.quantity * 100) / 100,
+        };
+      } else if (dto.quantity >= 1000) {
+        baseUnitPrice = Math.round(originalBasePrice * 0.90 * 10000) / 10000;
+        appliedOffer = {
+          offerId: 'tier-1000',
+          minQty: 1000,
+          maxQty: 4999,
+          discountPercent: 10,
+          offerName: 'Volume Tier Savings (10% OFF)',
+          savingsAmount: Math.round(originalBasePrice * 0.10 * dto.quantity * 100) / 100,
+        };
+      } else if (dto.quantity >= 500) {
+        baseUnitPrice = Math.round(originalBasePrice * 0.95 * 10000) / 10000;
+        appliedOffer = {
+          offerId: 'tier-500',
+          minQty: 500,
+          maxQty: 999,
+          discountPercent: 5,
+          offerName: 'Volume Tier Savings (5% OFF)',
+          savingsAmount: Math.round(originalBasePrice * 0.05 * dto.quantity * 100) / 100,
+        };
+      }
     }
 
     // 4. Artwork & Design Service Dynamic Rules
@@ -280,6 +394,11 @@ export class PricingService {
     let unitPrice = (baseUnitPrice + optionsUnitModifier) * (1 + percentageModifierTotal / 100);
     unitPrice = Math.round(unitPrice * 100) / 100;
 
+    const baseSubtotal = Math.round(originalBasePrice * dto.quantity * 100) / 100;
+    const dynamicModifiersTotal = Math.round(optionsUnitModifier * dto.quantity * 100) / 100;
+    const discountAmount = appliedOffer ? appliedOffer.savingsAmount : 0;
+    const discountPercent = appliedOffer ? appliedOffer.discountPercent : 0;
+
     const printItemsTotal = Math.round(unitPrice * dto.quantity * 100) / 100;
     const subtotal = Math.round((printItemsTotal + artworkFee + designServiceFee) * 100) / 100;
 
@@ -297,9 +416,28 @@ export class PricingService {
     }
     const totalTax = igst > 0 ? igst : cgst + sgst;
 
-    // Shipping calculation: Free above 1000 INR
-    const estimatedShipping = subtotal >= 1000 ? 0 : 100;
-    const grandTotal = Math.round((subtotal + totalTax + estimatedShipping) * 100) / 100;
+    // Courier Delivery & Shipping Calculation (Product Configured with Free Threshold)
+    const courierRate = (product as any).courierCharge !== null && (product as any).courierCharge !== undefined ? Number((product as any).courierCharge) : 100;
+    const freeShippingThreshold = (product as any).freeShippingThreshold !== null && (product as any).freeShippingThreshold !== undefined ? Number((product as any).freeShippingThreshold) : 1000;
+    const deliveryMethod = dto.deliveryMethod || 'COURIER';
+    
+    let estimatedShipping = 0;
+    if (deliveryMethod === 'STORE_PICKUP') {
+      estimatedShipping = 0;
+    } else if (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) {
+      estimatedShipping = 0;
+    } else {
+      estimatedShipping = courierRate;
+    }
+
+    // Cash on Delivery (COD) Surcharge Calculation
+    const allowCod = (product as any).allowCod ?? true;
+    const codSurcharge = (product as any).codSurcharge !== null && (product as any).codSurcharge !== undefined ? Number((product as any).codSurcharge) : 50;
+    const paymentMethod = dto.paymentMethod || 'FULL';
+    const isCodSelected = Boolean(dto.isCod || paymentMethod === 'COD');
+    const codCharge = isCodSelected && allowCod ? codSurcharge : 0;
+
+    const grandTotal = Math.round((subtotal + totalTax + estimatedShipping + codCharge) * 100) / 100;
 
     // Enrich specifications snapshot with flow engine meta
     specificationsSnapshot['_artworkRequirement'] = {
@@ -320,10 +458,31 @@ export class PricingService {
       feeApplied: designServiceFee,
     };
 
+    specificationsSnapshot['_fulfillment'] = {
+      deliveryMethod,
+      courierCharge: courierRate,
+      freeShippingThreshold,
+      shippingApplied: estimatedShipping,
+      paymentMethod,
+      allowCod,
+      codSurcharge,
+      codChargeApplied: codCharge,
+    };
+
+    if (appliedOffer) {
+      specificationsSnapshot['_appliedOffer'] = appliedOffer;
+    }
+
     return {
-      basePrice: Number(product.basePrice),
+      basePrice: originalBasePrice,
+      originalBasePrice,
+      effectiveBasePrice: baseUnitPrice,
       quantity: dto.quantity,
-      optionsCost: Math.round(optionsUnitModifier * dto.quantity * 100) / 100,
+      baseSubtotal,
+      optionsCost: dynamicModifiersTotal,
+      dynamicModifiersTotal,
+      discountAmount,
+      discountPercent,
       artworkFee,
       designServiceFee,
       artworkRequirement: artworkReq,
@@ -335,11 +494,21 @@ export class PricingService {
       sgst,
       igst,
       totalTax,
+      courierCharge: courierRate,
+      freeShippingThreshold,
       estimatedShipping,
+      allowCod,
+      codSurcharge,
+      codCharge,
+      deliveryMethod,
+      paymentMethod,
       grandTotal,
       productionDays: product.productionDays,
+      appliedOffer,
+      availableOffers,
       selectedOptionsSummary,
       specificationsSnapshot,
     };
   }
 }
+

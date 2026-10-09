@@ -51,6 +51,9 @@ import {
   CreateInventoryItemDto,
   UpdateInventoryItemDto,
   RecordStockMovementDto,
+  CreatePricingRuleDto,
+  UpdatePricingRuleDto,
+  BatchPricingRulesDto,
 } from './dto/catalogue.dto';
 
 @Controller('admin')
@@ -380,4 +383,53 @@ export class AdminCatalogueController {
   async listStockMovements(@Query('itemId') itemId?: string) {
     return this.catalogueService.listStockMovements(itemId);
   }
+
+  // ==========================================
+  // PRICING RULES / QUANTITY TIER OFFERS
+  // ==========================================
+
+  @Get('catalogue/products/:productId/pricing-rules')
+  async listPricingRules(@Param('productId') productId: string) {
+    return this.catalogueService.listPricingRules(productId);
+  }
+
+  @Post('catalogue/products/:productId/pricing-rules')
+  @Roles(UserRole.ADMIN_MANAGER)
+  async addPricingRule(
+    @Param('productId') productId: string,
+    @Body() dto: CreatePricingRuleDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.catalogueService.addPricingRule(productId, dto, user?.sub);
+  }
+
+  @Put('catalogue/products/:productId/pricing-rules/:ruleId')
+  @Roles(UserRole.ADMIN_MANAGER)
+  async updatePricingRule(
+    @Param('ruleId') ruleId: string,
+    @Body() dto: UpdatePricingRuleDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.catalogueService.updatePricingRule(ruleId, dto, user?.sub);
+  }
+
+  @Delete('catalogue/products/:productId/pricing-rules/:ruleId')
+  @Roles(UserRole.ADMIN_MANAGER)
+  async deletePricingRule(
+    @Param('ruleId') ruleId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.catalogueService.deletePricingRule(ruleId, user?.sub);
+  }
+
+  @Put('catalogue/products/:productId/pricing-rules-batch')
+  @Roles(UserRole.ADMIN_MANAGER)
+  async saveBatchPricingRules(
+    @Param('productId') productId: string,
+    @Body() dto: BatchPricingRulesDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.catalogueService.saveBatchPricingRules(productId, dto, user?.sub);
+  }
 }
+

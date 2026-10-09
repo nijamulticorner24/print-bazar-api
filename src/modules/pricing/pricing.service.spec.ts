@@ -32,6 +32,12 @@ describe('PricingService (Authoritative Server Pricing Engine)', () => {
 
   const mockPrismaService = {
     product: {
+      findFirst: jest.fn().mockImplementation(({ where }) => {
+        if (where?.OR?.some((cond: any) => cond.id === 'prod-001' || cond.slug === 'prod-001' || cond.sku === 'prod-001')) {
+          return Promise.resolve(mockProduct);
+        }
+        return Promise.resolve(null);
+      }),
       findUnique: jest.fn().mockImplementation(({ where }) => {
         if (where.id === 'prod-001') return Promise.resolve(mockProduct);
         return Promise.resolve(null);
