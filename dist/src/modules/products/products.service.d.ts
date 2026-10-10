@@ -80,6 +80,7 @@ export declare class ProductsService {
         pricingModel: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         minQuantity: number;
+        quantityStep: number | null;
         maxQuantity: number;
         productionDays: number;
         isFeatured: boolean;
@@ -189,6 +190,7 @@ export declare class ProductsService {
         pricingModel: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
         minQuantity: number;
+        quantityStep: number | null;
         maxQuantity: number;
         productionDays: number;
         isFeatured: boolean;

@@ -352,6 +352,7 @@ export class AdminCatalogueService {
           pricingModel: dto.pricingModel || 'MATRIX',
           basePrice: dto.basePrice,
           minQuantity: dto.minQuantity || 1,
+          quantityStep: dto.quantityStep !== undefined ? dto.quantityStep : 100,
           maxQuantity: dto.maxQuantity || 100000,
           productionDays: dto.productionDays || 2,
           sortOrder: dto.sortOrder || 0,
@@ -374,7 +375,7 @@ export class AdminCatalogueService {
           freeShippingThreshold: dto.freeShippingThreshold !== undefined ? dto.freeShippingThreshold : 1000,
           allowCod: dto.allowCod !== undefined ? dto.allowCod : true,
           codSurcharge: dto.codSurcharge !== undefined ? dto.codSurcharge : 50,
-        },
+        } as any,
       });
 
       // Add Images if provided
@@ -481,6 +482,7 @@ export class AdminCatalogueService {
         pricingModel: dto.pricingModel,
         basePrice: dto.basePrice,
         minQuantity: dto.minQuantity,
+        quantityStep: dto.quantityStep,
         maxQuantity: dto.maxQuantity,
         productionDays: dto.productionDays,
         sortOrder: dto.sortOrder,
@@ -504,7 +506,7 @@ export class AdminCatalogueService {
         freeShippingThreshold: dto.freeShippingThreshold,
         allowCod: dto.allowCod,
         codSurcharge: dto.codSurcharge,
-      },
+      } as any,
     });
 
     await this.auditService.log({

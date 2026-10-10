@@ -352,6 +352,7 @@ model Product {
   pricingModel   String          @default("MATRIX") // MATRIX, FORMULA, TIERED, FLAT
   basePrice      Decimal         @db.Decimal(12, 2)
   minQuantity    Int             @default(1)
+  quantityStep   Int?            @default(100)
   maxQuantity    Int             @default(100000)
   productionDays Int             @default(2)
   sortOrder      Int             @default(0)

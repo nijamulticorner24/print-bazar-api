@@ -137,6 +137,7 @@ export declare class CreateProductDto {
     pricingModel?: string;
     basePrice: number;
     minQuantity?: number;
+    quantityStep?: number;
     maxQuantity?: number;
     productionDays?: number;
     sortOrder?: number;
@@ -172,6 +173,7 @@ export declare class UpdateProductDto {
     pricingModel?: string;
     basePrice?: number;
     minQuantity?: number;
+    quantityStep?: number;
     maxQuantity?: number;
     productionDays?: number;
     sortOrder?: number;

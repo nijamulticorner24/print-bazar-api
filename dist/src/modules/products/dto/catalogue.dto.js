@@ -477,6 +477,7 @@ class CreateProductDto {
     pricingModel;
     basePrice;
     minQuantity;
+    quantityStep;
     maxQuantity;
     productionDays;
     sortOrder;
@@ -549,6 +550,12 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreateProductDto.prototype, "minQuantity", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateProductDto.prototype, "quantityStep", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(1),
@@ -692,6 +699,7 @@ class UpdateProductDto {
     pricingModel;
     basePrice;
     minQuantity;
+    quantityStep;
     maxQuantity;
     productionDays;
     sortOrder;
@@ -764,6 +772,12 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], UpdateProductDto.prototype, "minQuantity", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateProductDto.prototype, "quantityStep", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(1),

@@ -108,7 +108,7 @@ let AdminCatalogueController = class AdminCatalogueController {
     }
     async uploadProductImage(productId, file, altText, caption, isPrimary, user) {
         if (!file) {
-            throw new common_1.BadRequestException('No image file provided');
+            throw new common_1.BadRequestException('No media file provided');
         }
         const isPrimaryBool = isPrimary === 'true' || isPrimary === true;
         return this.catalogueService.uploadProductImage(productId, file, { altText, caption, isPrimary: isPrimaryBool }, user?.sub);
@@ -349,7 +349,10 @@ __decorate([
 __decorate([
     (0, common_1.Post)('catalogue/products/:productId/upload-image'),
     (0, auth_decorator_1.Roles)(roles_1.UserRole.ADMIN_MANAGER),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', { storage: productImageStorage })),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
+        storage: productImageStorage,
+        limits: { fileSize: 100 * 1024 * 1024 },
+    })),
     __param(0, (0, common_1.Param)('productId')),
     __param(1, (0, common_1.UploadedFile)()),
     __param(2, (0, common_1.Body)('altText')),
@@ -363,7 +366,10 @@ __decorate([
 __decorate([
     (0, common_1.Post)('catalogue/upload-media'),
     (0, auth_decorator_1.Roles)(roles_1.UserRole.ADMIN_MANAGER),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', { storage: productImageStorage })),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
+        storage: productImageStorage,
+        limits: { fileSize: 100 * 1024 * 1024 },
+    })),
     __param(0, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),

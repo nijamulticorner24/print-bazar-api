@@ -253,7 +253,12 @@ export class AdminCatalogueController {
 
   @Post('catalogue/products/:productId/upload-image')
   @Roles(UserRole.ADMIN_MANAGER)
-  @UseInterceptors(FileInterceptor('file', { storage: productImageStorage }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: productImageStorage,
+      limits: { fileSize: 100 * 1024 * 1024 }, // 100MB for 4K video clips & HD images
+    }),
+  )
   async uploadProductImage(
     @Param('productId') productId: string,
     @UploadedFile() file: Express.Multer.File,
@@ -263,7 +268,7 @@ export class AdminCatalogueController {
     @CurrentUser() user?: JwtPayload,
   ) {
     if (!file) {
-      throw new BadRequestException('No image file provided');
+      throw new BadRequestException('No media file provided');
     }
     const isPrimaryBool = isPrimary === 'true' || isPrimary === true;
     return this.catalogueService.uploadProductImage(
@@ -276,7 +281,12 @@ export class AdminCatalogueController {
 
   @Post('catalogue/upload-media')
   @Roles(UserRole.ADMIN_MANAGER)
-  @UseInterceptors(FileInterceptor('file', { storage: productImageStorage }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: productImageStorage,
+      limits: { fileSize: 100 * 1024 * 1024 },
+    }),
+  )
   async uploadMedia(
     @UploadedFile() file: Express.Multer.File,
   ) {

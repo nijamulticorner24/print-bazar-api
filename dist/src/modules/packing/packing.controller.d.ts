@@ -272,6 +272,7 @@ export declare class PackingController {
                 pricingModel: string;
                 basePrice: import("@prisma/client/runtime/library").Decimal;
                 minQuantity: number;
+                quantityStep: number | null;
                 maxQuantity: number;
                 productionDays: number;
                 isFeatured: boolean;

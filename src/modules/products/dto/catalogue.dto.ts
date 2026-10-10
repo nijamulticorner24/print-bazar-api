@@ -396,6 +396,11 @@ export class CreateProductDto {
   @IsNumber()
   @Min(1)
   @IsOptional()
+  quantityStep?: number;
+
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
   maxQuantity?: number;
 
   @IsNumber()
@@ -543,6 +548,11 @@ export class UpdateProductDto {
   @Min(1)
   @IsOptional()
   minQuantity?: number;
+
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  quantityStep?: number;
 
   @IsNumber()
   @Min(1)

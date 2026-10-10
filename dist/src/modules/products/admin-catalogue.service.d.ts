@@ -19,15 +19,15 @@ export declare class AdminCatalogueService {
             };
         } & {
             id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
+            isActive: boolean;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         })[];
         _count: {
             children: number;
@@ -35,15 +35,15 @@ export declare class AdminCatalogueService {
         };
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         image: string | null;
         sortOrder: number;
+        isActive: boolean;
         parentId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     })[]>;
     getCategoryById(id: string): Promise<{
         parent: {
@@ -57,15 +57,15 @@ export declare class AdminCatalogueService {
             };
         } & {
             id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
+            isActive: boolean;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         })[];
         products: {
             id: string;
@@ -81,15 +81,15 @@ export declare class AdminCatalogueService {
         };
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         image: string | null;
         sortOrder: number;
+        isActive: boolean;
         parentId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     createCategory(dto: CreateCategoryDto, actorId?: string): Promise<{
         parent: {
@@ -99,15 +99,15 @@ export declare class AdminCatalogueService {
         } | null;
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         image: string | null;
         sortOrder: number;
+        isActive: boolean;
         parentId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     updateCategory(id: string, dto: UpdateCategoryDto, actorId?: string): Promise<{
         parent: {
@@ -117,15 +117,15 @@ export declare class AdminCatalogueService {
         } | null;
         children: {
             id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
+            isActive: boolean;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         }[];
         _count: {
             children: number;
@@ -133,15 +133,15 @@ export declare class AdminCatalogueService {
         };
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         image: string | null;
         sortOrder: number;
+        isActive: boolean;
         parentId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     deleteCategory(id: string, actorId?: string): Promise<{
         success: boolean;
@@ -162,12 +162,12 @@ export declare class AdminCatalogueService {
             };
             images: {
                 id: string;
+                sortOrder: number;
                 createdAt: Date;
                 updatedAt: Date;
-                sortOrder: number;
+                isPrimary: boolean;
                 productId: string;
                 storageKey: string | null;
-                isPrimary: boolean;
                 url: string;
                 altText: string | null;
                 caption: string | null;
@@ -175,27 +175,27 @@ export declare class AdminCatalogueService {
             fields: ({
                 options: {
                     id: string;
+                    sortOrder: number;
                     isActive: boolean;
                     createdAt: Date;
                     updatedAt: Date;
-                    sortOrder: number;
                     label: string;
+                    fieldId: string;
                     value: string;
                     priceModifierType: string;
                     priceModifier: Prisma.Decimal;
                     isDefault: boolean;
-                    fieldId: string;
                 }[];
             } & {
                 id: string;
-                createdAt: Date;
-                updatedAt: Date;
-                type: import(".prisma/client").$Enums.ProductFieldType;
                 description: string | null;
                 sortOrder: number;
+                createdAt: Date;
+                updatedAt: Date;
                 productId: string;
                 label: string;
                 key: string;
+                type: import(".prisma/client").$Enums.ProductFieldType;
                 placeholder: string | null;
                 defaultValue: string | null;
                 isRequired: boolean;
@@ -206,19 +206,20 @@ export declare class AdminCatalogueService {
             })[];
         } & {
             id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             sortOrder: number;
-            sku: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
             categoryId: string;
+            sku: string;
             status: import(".prisma/client").$Enums.ProductStatus;
             pricingModel: string;
             basePrice: Prisma.Decimal;
             minQuantity: number;
+            quantityStep: number | null;
             maxQuantity: number;
             productionDays: number;
             isFeatured: boolean;
@@ -251,24 +252,24 @@ export declare class AdminCatalogueService {
     getProductById(id: string): Promise<{
         category: {
             id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
+            isActive: boolean;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
         images: {
             id: string;
+            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
-            sortOrder: number;
+            isPrimary: boolean;
             productId: string;
             storageKey: string | null;
-            isPrimary: boolean;
             url: string;
             altText: string | null;
             caption: string | null;
@@ -276,27 +277,27 @@ export declare class AdminCatalogueService {
         fields: ({
             options: {
                 id: string;
+                sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
-                sortOrder: number;
                 label: string;
+                fieldId: string;
                 value: string;
                 priceModifierType: string;
                 priceModifier: Prisma.Decimal;
                 isDefault: boolean;
-                fieldId: string;
             }[];
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            type: import(".prisma/client").$Enums.ProductFieldType;
             description: string | null;
             sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
             productId: string;
             label: string;
             key: string;
+            type: import(".prisma/client").$Enums.ProductFieldType;
             placeholder: string | null;
             defaultValue: string | null;
             isRequired: boolean;
@@ -309,26 +310,27 @@ export declare class AdminCatalogueService {
             id: string;
             createdAt: Date;
             productId: string;
-            unitPrice: Prisma.Decimal;
             minQty: number;
             maxQty: number;
             attributeCombination: Prisma.JsonValue;
+            unitPrice: Prisma.Decimal;
         }[];
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        sku: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         categoryId: string;
+        sku: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: Prisma.Decimal;
         minQuantity: number;
+        quantityStep: number | null;
         maxQuantity: number;
         productionDays: number;
         isFeatured: boolean;
@@ -354,24 +356,24 @@ export declare class AdminCatalogueService {
     createProduct(dto: CreateProductDto, actorId?: string): Promise<{
         category: {
             id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
+            isActive: boolean;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
         images: {
             id: string;
+            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
-            sortOrder: number;
+            isPrimary: boolean;
             productId: string;
             storageKey: string | null;
-            isPrimary: boolean;
             url: string;
             altText: string | null;
             caption: string | null;
@@ -379,27 +381,27 @@ export declare class AdminCatalogueService {
         fields: ({
             options: {
                 id: string;
+                sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
-                sortOrder: number;
                 label: string;
+                fieldId: string;
                 value: string;
                 priceModifierType: string;
                 priceModifier: Prisma.Decimal;
                 isDefault: boolean;
-                fieldId: string;
             }[];
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            type: import(".prisma/client").$Enums.ProductFieldType;
             description: string | null;
             sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
             productId: string;
             label: string;
             key: string;
+            type: import(".prisma/client").$Enums.ProductFieldType;
             placeholder: string | null;
             defaultValue: string | null;
             isRequired: boolean;
@@ -412,26 +414,27 @@ export declare class AdminCatalogueService {
             id: string;
             createdAt: Date;
             productId: string;
-            unitPrice: Prisma.Decimal;
             minQty: number;
             maxQty: number;
             attributeCombination: Prisma.JsonValue;
+            unitPrice: Prisma.Decimal;
         }[];
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        sku: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         categoryId: string;
+        sku: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: Prisma.Decimal;
         minQuantity: number;
+        quantityStep: number | null;
         maxQuantity: number;
         productionDays: number;
         isFeatured: boolean;
@@ -457,24 +460,24 @@ export declare class AdminCatalogueService {
     updateProduct(id: string, dto: UpdateProductDto, actorId?: string): Promise<{
         category: {
             id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
+            isActive: boolean;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
         images: {
             id: string;
+            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
-            sortOrder: number;
+            isPrimary: boolean;
             productId: string;
             storageKey: string | null;
-            isPrimary: boolean;
             url: string;
             altText: string | null;
             caption: string | null;
@@ -482,27 +485,27 @@ export declare class AdminCatalogueService {
         fields: ({
             options: {
                 id: string;
+                sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
-                sortOrder: number;
                 label: string;
+                fieldId: string;
                 value: string;
                 priceModifierType: string;
                 priceModifier: Prisma.Decimal;
                 isDefault: boolean;
-                fieldId: string;
             }[];
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            type: import(".prisma/client").$Enums.ProductFieldType;
             description: string | null;
             sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
             productId: string;
             label: string;
             key: string;
+            type: import(".prisma/client").$Enums.ProductFieldType;
             placeholder: string | null;
             defaultValue: string | null;
             isRequired: boolean;
@@ -515,26 +518,27 @@ export declare class AdminCatalogueService {
             id: string;
             createdAt: Date;
             productId: string;
-            unitPrice: Prisma.Decimal;
             minQty: number;
             maxQty: number;
             attributeCombination: Prisma.JsonValue;
+            unitPrice: Prisma.Decimal;
         }[];
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        sku: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         categoryId: string;
+        sku: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: Prisma.Decimal;
         minQuantity: number;
+        quantityStep: number | null;
         maxQuantity: number;
         productionDays: number;
         isFeatured: boolean;
@@ -560,24 +564,24 @@ export declare class AdminCatalogueService {
     duplicateProduct(id: string, actorId?: string): Promise<{
         category: {
             id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
+            isActive: boolean;
             parentId: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
         images: {
             id: string;
+            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
-            sortOrder: number;
+            isPrimary: boolean;
             productId: string;
             storageKey: string | null;
-            isPrimary: boolean;
             url: string;
             altText: string | null;
             caption: string | null;
@@ -585,27 +589,27 @@ export declare class AdminCatalogueService {
         fields: ({
             options: {
                 id: string;
+                sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
-                sortOrder: number;
                 label: string;
+                fieldId: string;
                 value: string;
                 priceModifierType: string;
                 priceModifier: Prisma.Decimal;
                 isDefault: boolean;
-                fieldId: string;
             }[];
         } & {
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            type: import(".prisma/client").$Enums.ProductFieldType;
             description: string | null;
             sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
             productId: string;
             label: string;
             key: string;
+            type: import(".prisma/client").$Enums.ProductFieldType;
             placeholder: string | null;
             defaultValue: string | null;
             isRequired: boolean;
@@ -618,26 +622,27 @@ export declare class AdminCatalogueService {
             id: string;
             createdAt: Date;
             productId: string;
-            unitPrice: Prisma.Decimal;
             minQty: number;
             maxQty: number;
             attributeCombination: Prisma.JsonValue;
+            unitPrice: Prisma.Decimal;
         }[];
     } & {
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        sku: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         categoryId: string;
+        sku: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: Prisma.Decimal;
         minQuantity: number;
+        quantityStep: number | null;
         maxQuantity: number;
         productionDays: number;
         isFeatured: boolean;
@@ -662,19 +667,20 @@ export declare class AdminCatalogueService {
     }>;
     publishProduct(id: string, actorId?: string): Promise<{
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        sku: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         categoryId: string;
+        sku: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: Prisma.Decimal;
         minQuantity: number;
+        quantityStep: number | null;
         maxQuantity: number;
         productionDays: number;
         isFeatured: boolean;
@@ -699,19 +705,20 @@ export declare class AdminCatalogueService {
     }>;
     archiveProduct(id: string, actorId?: string): Promise<{
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        sku: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         categoryId: string;
+        sku: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: Prisma.Decimal;
         minQuantity: number;
+        quantityStep: number | null;
         maxQuantity: number;
         productionDays: number;
         isFeatured: boolean;
@@ -736,19 +743,20 @@ export declare class AdminCatalogueService {
     }>;
     deleteProduct(id: string, actorId?: string): Promise<{
         id: string;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        sku: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         categoryId: string;
+        sku: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: Prisma.Decimal;
         minQuantity: number;
+        quantityStep: number | null;
         maxQuantity: number;
         productionDays: number;
         isFeatured: boolean;
@@ -777,27 +785,27 @@ export declare class AdminCatalogueService {
     addField(productId: string, dto: CreateProductFieldDto, actorId?: string): Promise<({
         options: {
             id: string;
+            sortOrder: number;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
-            sortOrder: number;
             label: string;
+            fieldId: string;
             value: string;
             priceModifierType: string;
             priceModifier: Prisma.Decimal;
             isDefault: boolean;
-            fieldId: string;
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        type: import(".prisma/client").$Enums.ProductFieldType;
         description: string | null;
         sortOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
         productId: string;
         label: string;
         key: string;
+        type: import(".prisma/client").$Enums.ProductFieldType;
         placeholder: string | null;
         defaultValue: string | null;
         isRequired: boolean;
@@ -809,27 +817,27 @@ export declare class AdminCatalogueService {
     updateField(fieldId: string, dto: UpdateProductFieldDto, actorId?: string): Promise<{
         options: {
             id: string;
+            sortOrder: number;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
-            sortOrder: number;
             label: string;
+            fieldId: string;
             value: string;
             priceModifierType: string;
             priceModifier: Prisma.Decimal;
             isDefault: boolean;
-            fieldId: string;
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        type: import(".prisma/client").$Enums.ProductFieldType;
         description: string | null;
         sortOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
         productId: string;
         label: string;
         key: string;
+        type: import(".prisma/client").$Enums.ProductFieldType;
         placeholder: string | null;
         defaultValue: string | null;
         isRequired: boolean;
@@ -844,29 +852,29 @@ export declare class AdminCatalogueService {
     }>;
     addFieldOption(fieldId: string, dto: CreateFieldOptionDto, actorId?: string): Promise<{
         id: string;
+        sortOrder: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        sortOrder: number;
         label: string;
+        fieldId: string;
         value: string;
         priceModifierType: string;
         priceModifier: Prisma.Decimal;
         isDefault: boolean;
-        fieldId: string;
     }>;
     updateFieldOption(optionId: string, dto: UpdateFieldOptionDto, actorId?: string): Promise<{
         id: string;
+        sortOrder: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        sortOrder: number;
         label: string;
+        fieldId: string;
         value: string;
         priceModifierType: string;
         priceModifier: Prisma.Decimal;
         isDefault: boolean;
-        fieldId: string;
     }>;
     deleteFieldOption(optionId: string, actorId?: string): Promise<{
         success: boolean;
@@ -878,24 +886,24 @@ export declare class AdminCatalogueService {
         isPrimary?: boolean;
     }, actorId?: string): Promise<{
         id: string;
+        sortOrder: number;
         createdAt: Date;
         updatedAt: Date;
-        sortOrder: number;
+        isPrimary: boolean;
         productId: string;
         storageKey: string | null;
-        isPrimary: boolean;
         url: string;
         altText: string | null;
         caption: string | null;
     }>;
     addProductImage(productId: string, dto: CreateProductImageDto, actorId?: string): Promise<{
         id: string;
+        sortOrder: number;
         createdAt: Date;
         updatedAt: Date;
-        sortOrder: number;
+        isPrimary: boolean;
         productId: string;
         storageKey: string | null;
-        isPrimary: boolean;
         url: string;
         altText: string | null;
         caption: string | null;
@@ -922,19 +930,19 @@ export declare class AdminCatalogueService {
             createdAt: Date;
             type: import(".prisma/client").$Enums.StockMovementType;
             notes: string | null;
+            inventoryItemId: string;
             quantity: Prisma.Decimal;
+            balanceAfter: Prisma.Decimal;
             referenceType: string | null;
             referenceId: string | null;
-            inventoryItemId: string;
-            balanceAfter: Prisma.Decimal;
             performedById: string | null;
         }[];
     } & {
         id: string;
+        name: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         sku: string;
         category: import(".prisma/client").$Enums.InventoryCategory;
         unit: string;
@@ -947,10 +955,10 @@ export declare class AdminCatalogueService {
     })[]>;
     createInventoryItem(dto: CreateInventoryItemDto, actorId?: string): Promise<{
         id: string;
+        name: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         sku: string;
         category: import(".prisma/client").$Enums.InventoryCategory;
         unit: string;
@@ -963,10 +971,10 @@ export declare class AdminCatalogueService {
     }>;
     updateInventoryItem(id: string, dto: UpdateInventoryItemDto, actorId?: string): Promise<{
         id: string;
+        name: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         sku: string;
         category: import(".prisma/client").$Enums.InventoryCategory;
         unit: string;
@@ -983,19 +991,19 @@ export declare class AdminCatalogueService {
             createdAt: Date;
             type: import(".prisma/client").$Enums.StockMovementType;
             notes: string | null;
+            inventoryItemId: string;
             quantity: Prisma.Decimal;
+            balanceAfter: Prisma.Decimal;
             referenceType: string | null;
             referenceId: string | null;
-            inventoryItemId: string;
-            balanceAfter: Prisma.Decimal;
             performedById: string | null;
         };
         item: {
             id: string;
+            name: string;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             sku: string;
             category: import(".prisma/client").$Enums.InventoryCategory;
             unit: string;
@@ -1019,39 +1027,39 @@ export declare class AdminCatalogueService {
         createdAt: Date;
         type: import(".prisma/client").$Enums.StockMovementType;
         notes: string | null;
+        inventoryItemId: string;
         quantity: Prisma.Decimal;
+        balanceAfter: Prisma.Decimal;
         referenceType: string | null;
         referenceId: string | null;
-        inventoryItemId: string;
-        balanceAfter: Prisma.Decimal;
         performedById: string | null;
     })[]>;
     listPricingRules(productId: string): Promise<{
         id: string;
         createdAt: Date;
         productId: string;
-        unitPrice: Prisma.Decimal;
         minQty: number;
         maxQty: number;
         attributeCombination: Prisma.JsonValue;
+        unitPrice: Prisma.Decimal;
     }[]>;
     addPricingRule(productId: string, dto: CreatePricingRuleDto, actorId?: string): Promise<{
         id: string;
         createdAt: Date;
         productId: string;
-        unitPrice: Prisma.Decimal;
         minQty: number;
         maxQty: number;
         attributeCombination: Prisma.JsonValue;
+        unitPrice: Prisma.Decimal;
     }>;
     updatePricingRule(ruleId: string, dto: UpdatePricingRuleDto, actorId?: string): Promise<{
         id: string;
         createdAt: Date;
         productId: string;
-        unitPrice: Prisma.Decimal;
         minQty: number;
         maxQty: number;
         attributeCombination: Prisma.JsonValue;
+        unitPrice: Prisma.Decimal;
     }>;
     deletePricingRule(ruleId: string, actorId?: string): Promise<{
         success: boolean;
@@ -1061,9 +1069,9 @@ export declare class AdminCatalogueService {
         id: string;
         createdAt: Date;
         productId: string;
-        unitPrice: Prisma.Decimal;
         minQty: number;
         maxQty: number;
         attributeCombination: Prisma.JsonValue;
+        unitPrice: Prisma.Decimal;
     }[]>;
 }

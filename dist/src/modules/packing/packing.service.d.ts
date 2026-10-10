@@ -313,6 +313,7 @@ export declare class PackingService {
                 pricingModel: string;
                 basePrice: Prisma.Decimal;
                 minQuantity: number;
+                quantityStep: number | null;
                 maxQuantity: number;
                 productionDays: number;
                 isFeatured: boolean;
