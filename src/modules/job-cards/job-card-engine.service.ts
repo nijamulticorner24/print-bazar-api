@@ -2,12 +2,14 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Priority, JobCardStatus } from '@prisma/client';
+import { Priority, JobCardStatus, AssignmentTaskType, AssignmentStatus } from '@prisma/client';
+import { JwtPayload } from '../../common/types/roles';
 
 @Injectable()
 export class JobCardEngineService {
@@ -193,11 +195,13 @@ export class JobCardEngineService {
     return defaultRoute;
   }
 
-  async listJobCards(params?: { status?: JobCardStatus; station?: string }) {
+  async listJobCards(params?: { status?: JobCardStatus; station?: string; user?: JwtPayload }) {
+    const isOperator = params?.user?.role === 'PRODUCTION_OPERATOR';
     return this.prisma.jobCard.findMany({
       where: {
         ...(params?.status ? { status: params.status } : {}),
         ...(params?.station ? { currentStation: params.station } : {}),
+        ...(isOperator && params?.user ? { operatorId: params.user.sub } : {}),
       },
       include: {
         order: {
@@ -219,6 +223,10 @@ export class JobCardEngineService {
     const job = await this.prisma.jobCard.findUnique({ where: { id: jobCardId } });
     if (!job) throw new NotFoundException(`JobCard '${jobCardId}' not found`);
 
+    if (job.operatorId && job.operatorId !== operatorId) {
+      throw new ForbiddenException(`JobCard '${job.jobNumber}' is already assigned to another operator.`);
+    }
+
     return this.prisma.jobCard.update({
       where: { id: jobCardId },
       data: {
@@ -235,24 +243,60 @@ export class JobCardEngineService {
     });
   }
 
-  async startJob(jobCardId: string, operatorId: string) {
+  async startJob(jobCardId: string, user: JwtPayload | string) {
+    const userId = typeof user === 'string' ? user : user.sub;
+    const isOperator = typeof user !== 'string' && user.role === 'PRODUCTION_OPERATOR';
+
+    const job = await this.prisma.jobCard.findUnique({ where: { id: jobCardId } });
+    if (!job) throw new NotFoundException(`JobCard '${jobCardId}' not found`);
+
+    if (isOperator && job.operatorId && job.operatorId !== userId) {
+      throw new ForbiddenException(`Forbidden: JobCard is assigned to a different operator`);
+    }
+
     return this.prisma.jobCard.update({
       where: { id: jobCardId },
       data: {
         status: JobCardStatus.PRINTING,
         startedAt: new Date(),
-        operatorId,
+        operatorId: job.operatorId || userId,
       },
     });
   }
 
-  async completeStation(jobCardId: string, nextStation: string) {
-    return this.prisma.jobCard.update({
+  async completeStation(jobCardId: string, nextStation: string, user?: JwtPayload) {
+    const job = await this.prisma.jobCard.findUnique({
+      where: { id: jobCardId },
+      include: { order: true },
+    });
+    if (!job) throw new NotFoundException(`JobCard '${jobCardId}' not found`);
+
+    if (user?.role === 'PRODUCTION_OPERATOR' && job.operatorId && job.operatorId !== user.sub) {
+      throw new ForbiddenException(`Forbidden: JobCard belongs to another operator`);
+    }
+
+    const updated = await this.prisma.jobCard.update({
       where: { id: jobCardId },
       data: {
         currentStation: nextStation,
         status: nextStation === 'FINAL_QC' ? JobCardStatus.QC_INSPECTION : JobCardStatus.PRINTING_COMPLETED,
       },
     });
+
+    if (nextStation === 'FINAL_QC' || nextStation === 'PACKING') {
+      await this.prisma.orderAssignment.updateMany({
+        where: {
+          orderId: job.orderId,
+          taskType: AssignmentTaskType.PRODUCTION,
+          status: AssignmentStatus.ACTIVE,
+        },
+        data: {
+          status: AssignmentStatus.COMPLETED,
+          completedAt: new Date(),
+        },
+      });
+    }
+
+    return updated;
   }
 }

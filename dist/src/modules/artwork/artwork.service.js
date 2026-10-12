@@ -92,13 +92,34 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
         });
         return artwork;
     }
-    async submitForCustomerApproval(artworkVersionId, prepressNotes, staffId) {
+    async submitForCustomerApproval(artworkVersionId, prepressNotes, user) {
+        const userId = typeof user === 'string' ? user : user.sub;
+        const userRole = typeof user === 'string' ? null : user.role;
         const artwork = await this.prisma.artworkVersion.findUnique({
             where: { id: artworkVersionId },
-            include: { orderItem: { include: { order: true } } },
+            include: {
+                orderItem: {
+                    include: {
+                        order: {
+                            include: {
+                                assignments: {
+                                    where: { taskType: client_1.AssignmentTaskType.DESIGN, status: client_1.AssignmentStatus.ACTIVE },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         });
         if (!artwork)
             throw new common_1.NotFoundException('Artwork version not found');
+        const order = artwork.orderItem.order;
+        if (userRole === client_1.UserRole.DESIGNER_PREPRESS) {
+            const isAssigned = order.assignments.some((a) => a.assignedUserId === userId);
+            if (!isAssigned) {
+                throw new common_1.ForbiddenException('You cannot submit proofs for a design task assigned to another designer.');
+            }
+        }
         const updated = await this.prisma.$transaction(async (tx) => {
             const art = await tx.artworkVersion.update({
                 where: { id: artworkVersionId },
@@ -108,7 +129,7 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
                 },
             });
             await tx.order.update({
-                where: { id: artwork.orderItem.order.id },
+                where: { id: order.id },
                 data: {
                     status: client_1.OrderStatus.CUSTOMER_APPROVAL_REQUIRED,
                     customerStatus: 'APPROVAL_REQUIRED',
@@ -116,25 +137,25 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
             });
             await tx.orderStatusHistory.create({
                 data: {
-                    orderId: artwork.orderItem.order.id,
-                    fromStatus: artwork.orderItem.order.status,
+                    orderId: order.id,
+                    fromStatus: order.status,
                     toStatus: client_1.OrderStatus.CUSTOMER_APPROVAL_REQUIRED,
-                    changedById: staffId,
+                    changedById: userId,
                     reason: 'Prepress proof generated. Awaiting customer digital approval sign-off.',
                 },
             });
             return art;
         });
         await this.auditService.log({
-            actorId: staffId,
+            actorId: userId,
             action: 'SUBMIT_FOR_CUSTOMER_APPROVAL',
             entity: 'ArtworkVersion',
             entityId: artwork.id,
-            orderId: artwork.orderItem.order.id,
+            orderId: order.id,
             reason: prepressNotes,
         });
         this.eventEmitter.emit('proof.ready', {
-            orderId: artwork.orderItem.order.id,
+            orderId: order.id,
             orderItemId: artwork.orderItemId,
             artworkVersionId: artwork.id,
         });
@@ -312,23 +333,38 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
             timestamp: new Date().toISOString(),
         };
     }
-    async getDesignQueue(search) {
+    async getDesignQueue(search, user) {
         const where = {
             OR: [
                 { status: client_1.OrderStatus.DESIGN_REQUIRED },
                 { status: client_1.OrderStatus.ARTWORK_REVIEW },
+                { status: client_1.OrderStatus.ORDER_REVIEW },
+                { status: client_1.OrderStatus.CUSTOMER_APPROVAL_REQUIRED },
             ],
         };
-        if (search) {
-            where.AND = [
-                {
-                    OR: [
-                        { orderNumber: { contains: search, mode: 'insensitive' } },
-                        { customer: { fullName: { contains: search, mode: 'insensitive' } } },
-                        { customer: { companyName: { contains: search, mode: 'insensitive' } } },
-                    ],
+        if (user?.role === client_1.UserRole.DESIGNER_PREPRESS) {
+            where.assignments = {
+                some: {
+                    assignedUserId: user.sub,
+                    taskType: client_1.AssignmentTaskType.DESIGN,
+                    status: client_1.AssignmentStatus.ACTIVE,
                 },
-            ];
+            };
+        }
+        if (search) {
+            const searchCondition = {
+                OR: [
+                    { orderNumber: { contains: search, mode: 'insensitive' } },
+                    { customer: { fullName: { contains: search, mode: 'insensitive' } } },
+                    { customer: { companyName: { contains: search, mode: 'insensitive' } } },
+                ],
+            };
+            if (where.AND) {
+                where.AND.push(searchCondition);
+            }
+            else {
+                where.AND = [searchCondition];
+            }
         }
         const orders = await this.prisma.order.findMany({
             where,
@@ -336,6 +372,10 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
                 customer: true,
                 shippingAddress: true,
                 billingAddress: true,
+                assignments: {
+                    where: { taskType: client_1.AssignmentTaskType.DESIGN, status: client_1.AssignmentStatus.ACTIVE },
+                    include: { assignedUser: { select: { id: true, fullName: true, email: true, role: true } } },
+                },
                 items: {
                     include: {
                         artworkVersions: { orderBy: { versionNumber: 'desc' } },
@@ -354,6 +394,8 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
                 specs.phone ||
                 specs.contactPhone ||
                 null;
+            const activeAssignment = o.assignments[0];
+            const assignedDesigner = activeAssignment?.assignedUser || null;
             return {
                 id: o.id,
                 orderId: o.id,
@@ -380,8 +422,8 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
                         approvedArtworkVersion: it.artworkVersions?.[0] || null,
                     };
                 }),
-                customerName: o.customer.fullName,
-                companyName: o.customer.companyName,
+                customerName: o.customer?.fullName,
+                companyName: o.customer?.companyName,
                 productName: item?.productName || 'Custom Print Job',
                 quantity: item?.quantity || 1,
                 status: o.status,
@@ -397,18 +439,34 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
                 createdAt: o.createdAt,
                 dueAt: o.dueAt,
                 latestArtworkVersion: item?.artworkVersions?.[0] || null,
+                assignedDesignerId: assignedDesigner?.id || null,
+                assignedDesignerName: assignedDesigner?.fullName || null,
+                assignedDesigner,
             };
         });
     }
-    async claimDesignJob(orderId, designerId) {
-        const order = await this.prisma.order.findUnique({
-            where: { id: orderId },
-            include: { items: true },
+    async claimDesignJob(orderId, user) {
+        const userId = typeof user === 'string' ? user : user.sub;
+        const userRole = typeof user === 'string' ? null : user.role;
+        const order = await this.prisma.order.findFirst({
+            where: {
+                OR: [{ id: orderId }, { orderNumber: orderId }],
+            },
+            include: {
+                items: true,
+                assignments: {
+                    where: { taskType: client_1.AssignmentTaskType.DESIGN, status: client_1.AssignmentStatus.ACTIVE },
+                },
+            },
         });
         if (!order)
             throw new common_1.NotFoundException(`Order '${orderId}' not found`);
+        const activeAssignment = order.assignments[0];
+        if (activeAssignment && activeAssignment.assignedUserId !== userId && userRole !== client_1.UserRole.ADMIN_MANAGER && userRole !== client_1.UserRole.OPERATIONAL_MANAGER) {
+            throw new common_1.ForbiddenException('This design task is assigned to another designer.');
+        }
         await this.auditService.log({
-            actorId: designerId,
+            actorId: userId,
             action: 'CLAIM_DESIGN_JOB',
             entity: 'Order',
             entityId: order.id,
@@ -417,13 +475,28 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
         });
         return { success: true, message: `Design job for ${order.orderNumber} claimed successfully.` };
     }
-    async completeDesignJob(orderId, dto, designerId) {
-        const order = await this.prisma.order.findUnique({
-            where: { id: orderId },
-            include: { items: { include: { artworkVersions: true } } },
+    async completeDesignJob(orderId, dto, user) {
+        const userId = typeof user === 'string' ? user : user.sub;
+        const userRole = typeof user === 'string' ? null : user.role;
+        const order = await this.prisma.order.findFirst({
+            where: {
+                OR: [{ id: orderId }, { orderNumber: orderId }],
+            },
+            include: {
+                items: { include: { artworkVersions: true } },
+                assignments: {
+                    where: { taskType: client_1.AssignmentTaskType.DESIGN, status: client_1.AssignmentStatus.ACTIVE },
+                },
+            },
         });
         if (!order)
             throw new common_1.NotFoundException(`Order '${orderId}' not found`);
+        if (userRole === client_1.UserRole.DESIGNER_PREPRESS) {
+            const isAssigned = order.assignments.some((a) => a.assignedUserId === userId);
+            if (!isAssigned) {
+                throw new common_1.ForbiddenException('You cannot complete a design task assigned to another designer.');
+            }
+        }
         const item = order.items[0];
         if (!item)
             throw new common_1.BadRequestException('Order contains no items to attach design artwork to.');
@@ -447,13 +520,25 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
                     isApproved: true,
                     approvedAt: new Date(),
                     prepressNotes: dto.prepressNotes || 'Completed by in-house studio team',
-                    uploadedBy: designerId,
+                    uploadedBy: userId,
                 },
             });
             await tx.orderItem.update({
                 where: { id: item.id },
                 data: {
                     approvedArtworkVersionId: artwork.id,
+                },
+            });
+            await tx.orderAssignment.updateMany({
+                where: {
+                    orderId: order.id,
+                    taskType: client_1.AssignmentTaskType.DESIGN,
+                    status: client_1.AssignmentStatus.ACTIVE,
+                },
+                data: {
+                    status: client_1.AssignmentStatus.COMPLETED,
+                    completedAt: new Date(),
+                    reason: dto.prepressNotes || 'Design finalized and verified by designer',
                 },
             });
             const updatedOrder = await tx.order.update({
@@ -468,7 +553,7 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
                     orderId: order.id,
                     fromStatus: order.status,
                     toStatus: client_1.OrderStatus.ARTWORK_APPROVED,
-                    changedById: designerId,
+                    changedById: userId,
                     reason: `Design completed by studio team (v${nextVersion}). Ready for OE Operational Review.`,
                     notes: dto.prepressNotes,
                 },
@@ -476,7 +561,7 @@ let ArtworkService = ArtworkService_1 = class ArtworkService {
             return { artwork, order: updatedOrder };
         });
         await this.auditService.log({
-            actorId: designerId,
+            actorId: userId,
             action: 'DESIGN_COMPLETED',
             entity: 'Order',
             entityId: order.id,

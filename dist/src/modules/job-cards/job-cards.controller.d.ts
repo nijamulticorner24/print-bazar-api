@@ -4,7 +4,7 @@ import { JobCardStatus } from '@prisma/client';
 export declare class JobCardsController {
     private readonly jobCardEngine;
     constructor(jobCardEngine: JobCardEngineService);
-    listJobCards(status?: JobCardStatus, station?: string): Promise<({
+    listJobCards(status?: JobCardStatus, station?: string, user?: JwtPayload): Promise<({
         operator: {
             id: string;
             fullName: string;
@@ -130,7 +130,7 @@ export declare class JobCardsController {
         startedAt: Date | null;
         completedAt: Date | null;
     }>;
-    completeStation(id: string, nextStation: string): Promise<{
+    completeStation(id: string, nextStation: string, user: JwtPayload): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;

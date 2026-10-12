@@ -473,7 +473,7 @@ let OperationsService = OperationsService_1 = class OperationsService {
             include: {
                 items: { select: { id: true, productName: true } },
                 assignments: {
-                    where: { taskType: client_1.AssignmentTaskType.DESIGN, status: client_1.AssignmentStatus.ACTIVE },
+                    where: { status: client_1.AssignmentStatus.ACTIVE },
                 },
             },
         });
@@ -481,6 +481,20 @@ let OperationsService = OperationsService_1 = class OperationsService {
             throw new common_1.NotFoundException(`Order ${orderId} not found`);
         if (order.status === client_1.OrderStatus.DELIVERED || order.status === client_1.OrderStatus.CANCELLED) {
             throw new common_1.BadRequestException('Cannot assign designer to completed or cancelled order');
+        }
+        if (order.status === client_1.OrderStatus.ON_HOLD) {
+            throw new common_1.BadRequestException('Cannot assign designer while order is ON HOLD');
+        }
+        const postApprovalProductionStatuses = [
+            client_1.OrderStatus.PRINTING,
+            client_1.OrderStatus.FINISHING,
+            client_1.OrderStatus.QUALITY_CHECK,
+            client_1.OrderStatus.PACKING,
+            client_1.OrderStatus.READY_FOR_DISPATCH,
+            client_1.OrderStatus.OUT_FOR_DELIVERY,
+        ];
+        if (postApprovalProductionStatuses.includes(order.status)) {
+            throw new common_1.BadRequestException(`Cannot assign designer: Order is currently in ${order.status}. Send order to rework/hold before reassigning design.`);
         }
         const targetUserId = dto.designerUserId || dto.designerId;
         if (!targetUserId)
@@ -493,56 +507,75 @@ let OperationsService = OperationsService_1 = class OperationsService {
         if (designer.role !== client_1.UserRole.DESIGNER_PREPRESS) {
             throw new common_1.BadRequestException(`User ${designer.fullName} does not have DESIGNER_PREPRESS role`);
         }
-        const previousAssignment = order.assignments[0] || null;
-        if (previousAssignment) {
-            await this.prisma.orderAssignment.update({
-                where: { id: previousAssignment.id },
-                data: { status: client_1.AssignmentStatus.REASSIGNED, reason: dto.reason || 'Reassigned by OE' },
-            });
-        }
-        const newAssignment = await this.prisma.orderAssignment.create({
-            data: {
-                orderId,
-                taskType: client_1.AssignmentTaskType.DESIGN,
-                assignedUserId: targetUserId,
-                assignedByUserId: user.sub,
-                status: client_1.AssignmentStatus.ACTIVE,
-                reason: dto.reason,
-            },
-            include: {
-                assignedUser: { select: { id: true, fullName: true, email: true, role: true } },
-                assignedByUser: { select: { id: true, fullName: true, role: true } },
-            },
-        });
-        const intakeStatuses = [
-            client_1.OrderStatus.ORDER_CREATED,
-            client_1.OrderStatus.PAYMENT_PENDING,
-            client_1.OrderStatus.PAYMENT_CONFIRMED,
-            client_1.OrderStatus.ORDER_REVIEW,
-            client_1.OrderStatus.ARTWORK_REVIEW,
-        ];
-        if (intakeStatuses.includes(order.status)) {
-            await this.prisma.order.update({
-                where: { id: order.id },
+        const previousAssignment = order.assignments.find((a) => a.taskType === client_1.AssignmentTaskType.DESIGN) || null;
+        const newAssignment = await this.prisma.$transaction(async (tx) => {
+            await tx.orderAssignment.updateMany({
+                where: {
+                    orderId: order.id,
+                    taskType: client_1.AssignmentTaskType.DESIGN,
+                    status: client_1.AssignmentStatus.ACTIVE,
+                },
                 data: {
-                    status: client_1.OrderStatus.DESIGN_REQUIRED,
-                    customerStatus: 'DESIGN_IN_PROGRESS',
+                    status: client_1.AssignmentStatus.REASSIGNED,
+                    reason: dto.reason || 'Reassigned to another designer by OE',
                 },
             });
-            await this.prisma.orderStatusHistory.create({
+            await tx.orderAssignment.updateMany({
+                where: {
+                    orderId: order.id,
+                    taskType: client_1.AssignmentTaskType.PRODUCTION,
+                    status: client_1.AssignmentStatus.ACTIVE,
+                },
+                data: {
+                    status: client_1.AssignmentStatus.REASSIGNED,
+                    reason: 'Cancelled production assignment in favor of design step by OE',
+                },
+            });
+            const createdAssignment = await tx.orderAssignment.create({
                 data: {
                     orderId: order.id,
-                    fromStatus: order.status,
-                    toStatus: client_1.OrderStatus.DESIGN_REQUIRED,
-                    changedById: user.sub,
-                    reason: `Assigned to Designer ${designer.fullName} by OE`,
-                    notes: dto.reason,
+                    taskType: client_1.AssignmentTaskType.DESIGN,
+                    assignedUserId: targetUserId,
+                    assignedByUserId: user.sub,
+                    status: client_1.AssignmentStatus.ACTIVE,
+                    reason: dto.reason,
+                },
+                include: {
+                    assignedUser: { select: { id: true, fullName: true, email: true, role: true } },
+                    assignedByUser: { select: { id: true, fullName: true, role: true } },
                 },
             });
-        }
+            const intakeStatuses = [
+                client_1.OrderStatus.ORDER_CREATED,
+                client_1.OrderStatus.PAYMENT_PENDING,
+                client_1.OrderStatus.PAYMENT_CONFIRMED,
+                client_1.OrderStatus.ORDER_REVIEW,
+                client_1.OrderStatus.ARTWORK_REVIEW,
+            ];
+            if (intakeStatuses.includes(order.status)) {
+                await tx.order.update({
+                    where: { id: order.id },
+                    data: {
+                        status: client_1.OrderStatus.DESIGN_REQUIRED,
+                        customerStatus: 'DESIGN_IN_PROGRESS',
+                    },
+                });
+                await tx.orderStatusHistory.create({
+                    data: {
+                        orderId: order.id,
+                        fromStatus: order.status,
+                        toStatus: client_1.OrderStatus.DESIGN_REQUIRED,
+                        changedById: user.sub,
+                        reason: `Assigned to Designer ${designer.fullName} by OE`,
+                        notes: dto.reason,
+                    },
+                });
+            }
+            return createdAssignment;
+        });
         await this.auditService.log({
             actorId: user.sub,
-            action: previousAssignment ? 'OE_REASSIGNED_DESIGNER' : 'OE_ASSIGNED_DESIGNER',
+            action: 'DESIGN_ASSIGNED',
             entity: 'OrderAssignment',
             entityId: newAssignment.id,
             previousState: previousAssignment
@@ -550,7 +583,7 @@ let OperationsService = OperationsService_1 = class OperationsService {
                 : undefined,
             newState: { assignedUserId: targetUserId, designerName: designer.fullName },
             reason: dto.reason,
-            orderId,
+            orderId: order.id,
         });
         this.eventEmitter.emit('oe.designer.assigned', {
             orderId: order.id,
@@ -577,7 +610,7 @@ let OperationsService = OperationsService_1 = class OperationsService {
                     },
                 },
                 assignments: {
-                    where: { taskType: client_1.AssignmentTaskType.PRODUCTION, status: client_1.AssignmentStatus.ACTIVE },
+                    where: { status: client_1.AssignmentStatus.ACTIVE },
                 },
                 jobCards: {
                     orderBy: { createdAt: 'desc' },
@@ -592,6 +625,33 @@ let OperationsService = OperationsService_1 = class OperationsService {
         if (order.status === client_1.OrderStatus.ON_HOLD) {
             throw new common_1.BadRequestException('Cannot assign operator while order is ON HOLD');
         }
+        const primaryItem = order.items?.[0];
+        let latestArtwork = null;
+        let isArtworkApproved = false;
+        if (primaryItem) {
+            latestArtwork = primaryItem.artworkVersions?.find((v) => v.isApproved) || primaryItem.artworkVersions?.[0] || null;
+            if (primaryItem.approvedArtworkVersionId) {
+                const explicitApproved = primaryItem.artworkVersions?.find((v) => v.id === primaryItem.approvedArtworkVersionId);
+                if (explicitApproved)
+                    latestArtwork = explicitApproved;
+            }
+            isArtworkApproved = Boolean(latestArtwork?.isApproved ||
+                primaryItem.approvedArtworkVersionId ||
+                order.status === client_1.OrderStatus.ARTWORK_APPROVED ||
+                order.status === client_1.OrderStatus.PRODUCTION_QUEUE ||
+                order.status === client_1.OrderStatus.PRINTING);
+        }
+        else {
+            isArtworkApproved = (order.status !== client_1.OrderStatus.DESIGN_REQUIRED &&
+                order.status !== client_1.OrderStatus.ARTWORK_REVIEW &&
+                order.status !== client_1.OrderStatus.CUSTOMER_APPROVAL_REQUIRED);
+        }
+        const requiresDesignFirst = order.status === client_1.OrderStatus.DESIGN_REQUIRED ||
+            order.status === client_1.OrderStatus.ARTWORK_REVIEW ||
+            order.status === client_1.OrderStatus.CUSTOMER_APPROVAL_REQUIRED;
+        if (requiresDesignFirst && !isArtworkApproved) {
+            throw new common_1.BadRequestException(`Cannot assign production operator: Artwork is still pending approval (${order.status}). Prepress design must be completed and approved before production assignment.`);
+        }
         const targetUserId = dto.operatorUserId || dto.operatorId;
         if (!targetUserId)
             throw new common_1.BadRequestException('Operator user ID is required');
@@ -603,18 +663,10 @@ let OperationsService = OperationsService_1 = class OperationsService {
         if (operator.role !== client_1.UserRole.PRODUCTION_OPERATOR) {
             throw new common_1.BadRequestException(`User ${operator.fullName} does not have PRODUCTION_OPERATOR role`);
         }
-        const primaryItem = order.items[0];
-        if (!primaryItem) {
-            throw new common_1.BadRequestException('Order contains no line items');
-        }
-        const specs = primaryItem.specifications || {};
-        let latestArtwork = primaryItem.artworkVersions?.find((v) => v.isApproved) || primaryItem.artworkVersions?.[0] || null;
-        if (primaryItem.approvedArtworkVersionId) {
-            const explicitApproved = primaryItem.artworkVersions?.find((v) => v.id === primaryItem.approvedArtworkVersionId);
-            if (explicitApproved)
-                latestArtwork = explicitApproved;
-        }
-        const sizeValidation = this.validateArtworkSize(specs, latestArtwork);
+        const specs = primaryItem?.specifications || {};
+        const sizeValidation = primaryItem
+            ? this.validateArtworkSize(specs, latestArtwork)
+            : { status: 'PASS', isMatch: true, expectedDisplay: 'Standard', actualDisplay: 'Standard' };
         let wasOverridden = false;
         if (sizeValidation.status === 'MISMATCH') {
             if (!dto.managerOverrideReason || dto.managerOverrideReason.trim().length < 5) {
@@ -622,69 +674,105 @@ let OperationsService = OperationsService_1 = class OperationsService {
             }
             wasOverridden = true;
         }
-        const previousAssignment = order.assignments[0] || null;
-        if (previousAssignment) {
-            await this.prisma.orderAssignment.update({
-                where: { id: previousAssignment.id },
-                data: { status: client_1.AssignmentStatus.REASSIGNED, reason: dto.reason || 'Reassigned by OE' },
+        const previousAssignment = order.assignments.find((a) => a.taskType === client_1.AssignmentTaskType.PRODUCTION) || null;
+        const newAssignment = await this.prisma.$transaction(async (tx) => {
+            await tx.orderAssignment.updateMany({
+                where: {
+                    orderId: order.id,
+                    taskType: client_1.AssignmentTaskType.PRODUCTION,
+                    status: client_1.AssignmentStatus.ACTIVE,
+                },
+                data: {
+                    status: client_1.AssignmentStatus.REASSIGNED,
+                    reason: dto.reason || 'Reassigned to another operator by OE',
+                },
             });
-        }
-        const newAssignment = await this.prisma.orderAssignment.create({
-            data: {
-                orderId,
-                taskType: client_1.AssignmentTaskType.PRODUCTION,
-                assignedUserId: targetUserId,
-                assignedByUserId: user.sub,
-                status: client_1.AssignmentStatus.ACTIVE,
-                reason: dto.reason,
-            },
-            include: {
-                assignedUser: { select: { id: true, fullName: true, email: true, role: true } },
-                assignedByUser: { select: { id: true, fullName: true, role: true } },
-            },
-        });
-        for (const orderItem of order.items) {
-            try {
-                await this.jobCardEngine.generateJobCardForOrderItem(orderItem.id, user.sub);
+            await tx.orderAssignment.updateMany({
+                where: {
+                    orderId: order.id,
+                    taskType: client_1.AssignmentTaskType.DESIGN,
+                    status: client_1.AssignmentStatus.ACTIVE,
+                },
+                data: {
+                    status: isArtworkApproved ? client_1.AssignmentStatus.COMPLETED : client_1.AssignmentStatus.CANCELLED,
+                    completedAt: new Date(),
+                    reason: 'Completed prior to production operator assignment',
+                },
+            });
+            const createdAssignment = await tx.orderAssignment.create({
+                data: {
+                    orderId: order.id,
+                    taskType: client_1.AssignmentTaskType.PRODUCTION,
+                    assignedUserId: targetUserId,
+                    assignedByUserId: user.sub,
+                    status: client_1.AssignmentStatus.ACTIVE,
+                    reason: dto.reason,
+                },
+                include: {
+                    assignedUser: { select: { id: true, fullName: true, email: true, role: true } },
+                    assignedByUser: { select: { id: true, fullName: true, role: true } },
+                },
+            });
+            if (order.jobCards && order.jobCards.length > 0) {
+                for (const jc of order.jobCards) {
+                    await tx.jobCard.update({
+                        where: { id: jc.id },
+                        data: { operatorId: targetUserId },
+                    });
+                }
             }
-            catch (err) {
-                this.logger.warn(`JobCard check/generation for item ${orderItem.id}: ${err.message}`);
+            else {
+                await tx.jobCard.updateMany({
+                    where: { orderId: order.id },
+                    data: { operatorId: targetUserId },
+                });
+            }
+            const preProdStatuses = [
+                client_1.OrderStatus.ORDER_CREATED,
+                client_1.OrderStatus.PAYMENT_CONFIRMED,
+                client_1.OrderStatus.ORDER_REVIEW,
+                client_1.OrderStatus.ARTWORK_APPROVED,
+            ];
+            if (preProdStatuses.includes(order.status)) {
+                await tx.order.update({
+                    where: { id: order.id },
+                    data: {
+                        status: client_1.OrderStatus.PRODUCTION_QUEUE,
+                        customerStatus: 'PREPARING_ORDER',
+                    },
+                });
+                await tx.orderStatusHistory.create({
+                    data: {
+                        orderId: order.id,
+                        fromStatus: order.status,
+                        toStatus: client_1.OrderStatus.PRODUCTION_QUEUE,
+                        changedById: user.sub,
+                        reason: wasOverridden
+                            ? `OE Assigned Production Operator ${operator.fullName} with Size Override: ${dto.managerOverrideReason}`
+                            : `OE Assigned Production Operator ${operator.fullName}. Released to Production Queue.`,
+                        notes: dto.reason,
+                    },
+                });
+            }
+            return createdAssignment;
+        });
+        if (order.items && order.items.length > 0) {
+            for (const orderItem of order.items) {
+                try {
+                    await this.jobCardEngine.generateJobCardForOrderItem(orderItem.id, user.sub);
+                }
+                catch (err) {
+                    this.logger.warn(`JobCard check/generation for item ${orderItem.id}: ${err.message}`);
+                }
             }
         }
         await this.prisma.jobCard.updateMany({
-            where: { orderId: order.id },
+            where: { orderId: order.id, operatorId: null },
             data: { operatorId: targetUserId },
         });
-        const preProdStatuses = [
-            client_1.OrderStatus.ORDER_CREATED,
-            client_1.OrderStatus.PAYMENT_CONFIRMED,
-            client_1.OrderStatus.ORDER_REVIEW,
-            client_1.OrderStatus.ARTWORK_APPROVED,
-        ];
-        if (preProdStatuses.includes(order.status)) {
-            await this.prisma.order.update({
-                where: { id: order.id },
-                data: {
-                    status: client_1.OrderStatus.PRODUCTION_QUEUE,
-                    customerStatus: 'PREPARING_ORDER',
-                },
-            });
-            await this.prisma.orderStatusHistory.create({
-                data: {
-                    orderId: order.id,
-                    fromStatus: order.status,
-                    toStatus: client_1.OrderStatus.PRODUCTION_QUEUE,
-                    changedById: user.sub,
-                    reason: wasOverridden
-                        ? `OE Assigned Production Operator ${operator.fullName} with Size Override: ${dto.managerOverrideReason}`
-                        : `OE Assigned Production Operator ${operator.fullName}. Released to Production Queue.`,
-                    notes: dto.reason,
-                },
-            });
-        }
         await this.auditService.log({
             actorId: user.sub,
-            action: previousAssignment ? 'OE_REASSIGNED_PRODUCTION_OPERATOR' : 'OE_ASSIGNED_PRODUCTION_OPERATOR',
+            action: 'PRODUCTION_OPERATOR_ASSIGNED',
             entity: 'OrderAssignment',
             entityId: newAssignment.id,
             previousState: previousAssignment
@@ -692,7 +780,7 @@ let OperationsService = OperationsService_1 = class OperationsService {
                 : undefined,
             newState: { assignedUserId: targetUserId, operatorName: operator.fullName, sizeOverride: wasOverridden },
             reason: dto.reason,
-            orderId,
+            orderId: order.id,
         });
         this.eventEmitter.emit('oe.operator.assigned', {
             orderId: order.id,

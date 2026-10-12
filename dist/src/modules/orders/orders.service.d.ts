@@ -259,13 +259,13 @@ export declare class OrdersService {
             id: string;
             createdAt: Date;
             orderId: string | null;
+            reason: string | null;
             actorType: string;
             action: string;
             entity: string;
             entityId: string;
             previousState: Prisma.JsonValue | null;
             newState: Prisma.JsonValue | null;
-            reason: string | null;
             ipAddress: string | null;
             userAgent: string | null;
             actorId: string | null;
@@ -334,9 +334,9 @@ export declare class OrdersService {
                     createdAt: Date;
                     description: string;
                     jobCardId: string;
-                    isResolved: boolean;
                     reasonCode: string;
                     reportedBy: string;
+                    isResolved: boolean;
                     resolvedBy: string | null;
                     resolvedAt: Date | null;
                 }[];

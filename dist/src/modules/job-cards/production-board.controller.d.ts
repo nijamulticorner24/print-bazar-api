@@ -64,9 +64,9 @@ export declare class ProductionBoardController {
         description: string | null;
         sortOrder: number;
         key: string;
+        color: string | null;
         mappedStatus: import(".prisma/client").$Enums.OrderStatus | null;
         mappedStation: string | null;
-        color: string | null;
         createdById: string | null;
     }>;
     reorderColumns(columnOrders: Array<{
@@ -86,9 +86,9 @@ export declare class ProductionBoardController {
         description: string | null;
         sortOrder: number;
         key: string;
+        color: string | null;
         mappedStatus: import(".prisma/client").$Enums.OrderStatus | null;
         mappedStation: string | null;
-        color: string | null;
         createdById: string | null;
     }>;
     archiveColumn(id: string, user: JwtPayload): Promise<{
@@ -101,9 +101,9 @@ export declare class ProductionBoardController {
         description: string | null;
         sortOrder: number;
         key: string;
+        color: string | null;
         mappedStatus: import(".prisma/client").$Enums.OrderStatus | null;
         mappedStation: string | null;
-        color: string | null;
         createdById: string | null;
     }>;
 }

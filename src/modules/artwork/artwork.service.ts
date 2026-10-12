@@ -2,12 +2,20 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ArtworkStatus, OrderStatus } from '@prisma/client';
+import {
+  ArtworkStatus,
+  OrderStatus,
+  AssignmentTaskType,
+  AssignmentStatus,
+  UserRole,
+} from '@prisma/client';
+import { JwtPayload } from '../../common/types/roles';
 import * as crypto from 'crypto';
 import { extractDimensionsFromFile, extractImageDimensions } from '../../common/utils/image-dimensions.util';
 
@@ -131,13 +139,38 @@ export class ArtworkService {
   /**
    * Designer uploads customer proof and requests customer sign-off
    */
-  async submitForCustomerApproval(artworkVersionId: string, prepressNotes: string, staffId: string) {
+  async submitForCustomerApproval(artworkVersionId: string, prepressNotes: string, user: JwtPayload | string) {
+    const userId = typeof user === 'string' ? user : user.sub;
+    const userRole = typeof user === 'string' ? null : user.role;
+
     const artwork = await this.prisma.artworkVersion.findUnique({
       where: { id: artworkVersionId },
-      include: { orderItem: { include: { order: true } } },
+      include: {
+        orderItem: {
+          include: {
+            order: {
+              include: {
+                assignments: {
+                  where: { taskType: AssignmentTaskType.DESIGN, status: AssignmentStatus.ACTIVE },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!artwork) throw new NotFoundException('Artwork version not found');
+
+    const order = artwork.orderItem.order;
+
+    // Security check: individual ownership verification
+    if (userRole === UserRole.DESIGNER_PREPRESS) {
+      const isAssigned = order.assignments.some((a) => a.assignedUserId === userId);
+      if (!isAssigned) {
+        throw new ForbiddenException('You cannot submit proofs for a design task assigned to another designer.');
+      }
+    }
 
     const updated = await this.prisma.$transaction(async (tx) => {
       const art = await tx.artworkVersion.update({
@@ -150,7 +183,7 @@ export class ArtworkService {
 
       // Transition order to CUSTOMER_APPROVAL_REQUIRED
       await tx.order.update({
-        where: { id: artwork.orderItem.order.id },
+        where: { id: order.id },
         data: {
           status: OrderStatus.CUSTOMER_APPROVAL_REQUIRED,
           customerStatus: 'APPROVAL_REQUIRED',
@@ -159,10 +192,10 @@ export class ArtworkService {
 
       await tx.orderStatusHistory.create({
         data: {
-          orderId: artwork.orderItem.order.id,
-          fromStatus: artwork.orderItem.order.status,
+          orderId: order.id,
+          fromStatus: order.status,
           toStatus: OrderStatus.CUSTOMER_APPROVAL_REQUIRED,
-          changedById: staffId,
+          changedById: userId,
           reason: 'Prepress proof generated. Awaiting customer digital approval sign-off.',
         },
       });
@@ -171,16 +204,16 @@ export class ArtworkService {
     });
 
     await this.auditService.log({
-      actorId: staffId,
+      actorId: userId,
       action: 'SUBMIT_FOR_CUSTOMER_APPROVAL',
       entity: 'ArtworkVersion',
       entityId: artwork.id,
-      orderId: artwork.orderItem.order.id,
+      orderId: order.id,
       reason: prepressNotes,
     });
 
     this.eventEmitter.emit('proof.ready', {
-      orderId: artwork.orderItem.order.id,
+      orderId: order.id,
       orderItemId: artwork.orderItemId,
       artworkVersionId: artwork.id,
     });
@@ -409,26 +442,44 @@ export class ArtworkService {
   }
 
   /**
-   * Design Queue: Fetch orders waiting in DESIGN_REQUIRED or needing design preparation
+   * Design Queue: Fetch orders waiting in DESIGN_REQUIRED or needing design preparation.
+   * If called by a DESIGNER_PREPRESS, returns ONLY tasks assigned to the authenticated designer's user ID.
+   * If called by OPERATIONAL_MANAGER or ADMIN_MANAGER, returns broad operational view.
    */
-  async getDesignQueue(search?: string) {
+  async getDesignQueue(search?: string, user?: JwtPayload) {
     const where: any = {
       OR: [
         { status: OrderStatus.DESIGN_REQUIRED },
         { status: OrderStatus.ARTWORK_REVIEW },
+        { status: OrderStatus.ORDER_REVIEW },
+        { status: OrderStatus.CUSTOMER_APPROVAL_REQUIRED },
       ],
     };
 
-    if (search) {
-      where.AND = [
-        {
-          OR: [
-            { orderNumber: { contains: search, mode: 'insensitive' } },
-            { customer: { fullName: { contains: search, mode: 'insensitive' } } },
-            { customer: { companyName: { contains: search, mode: 'insensitive' } } },
-          ],
+    // Strict individual ownership: Designer ONLY sees tasks actively assigned to their user ID
+    if (user?.role === UserRole.DESIGNER_PREPRESS) {
+      where.assignments = {
+        some: {
+          assignedUserId: user.sub,
+          taskType: AssignmentTaskType.DESIGN,
+          status: AssignmentStatus.ACTIVE,
         },
-      ];
+      };
+    }
+
+    if (search) {
+      const searchCondition = {
+        OR: [
+          { orderNumber: { contains: search, mode: 'insensitive' } },
+          { customer: { fullName: { contains: search, mode: 'insensitive' } } },
+          { customer: { companyName: { contains: search, mode: 'insensitive' } } },
+        ],
+      };
+      if (where.AND) {
+        where.AND.push(searchCondition);
+      } else {
+        where.AND = [searchCondition];
+      }
     }
 
     const orders = await this.prisma.order.findMany({
@@ -437,6 +488,10 @@ export class ArtworkService {
         customer: true,
         shippingAddress: true,
         billingAddress: true,
+        assignments: {
+          where: { taskType: AssignmentTaskType.DESIGN, status: AssignmentStatus.ACTIVE },
+          include: { assignedUser: { select: { id: true, fullName: true, email: true, role: true } } },
+        },
         items: {
           include: {
             artworkVersions: { orderBy: { versionNumber: 'desc' } },
@@ -457,6 +512,9 @@ export class ArtworkService {
         specs.phone ||
         specs.contactPhone ||
         null;
+
+      const activeAssignment = o.assignments[0];
+      const assignedDesigner = activeAssignment?.assignedUser || null;
 
       return {
         id: o.id,
@@ -484,8 +542,8 @@ export class ArtworkService {
             approvedArtworkVersion: it.artworkVersions?.[0] || null,
           };
         }),
-        customerName: o.customer.fullName,
-        companyName: o.customer.companyName,
+        customerName: o.customer?.fullName,
+        companyName: o.customer?.companyName,
         productName: item?.productName || 'Custom Print Job',
         quantity: item?.quantity || 1,
         status: o.status,
@@ -501,6 +559,9 @@ export class ArtworkService {
         createdAt: o.createdAt,
         dueAt: o.dueAt,
         latestArtworkVersion: item?.artworkVersions?.[0] || null,
+        assignedDesignerId: assignedDesigner?.id || null,
+        assignedDesignerName: assignedDesigner?.fullName || null,
+        assignedDesigner,
       };
     });
   }
@@ -508,16 +569,31 @@ export class ArtworkService {
   /**
    * Designer claims a design job from the queue
    */
-  async claimDesignJob(orderId: string, designerId: string) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: { items: true },
+  async claimDesignJob(orderId: string, user: JwtPayload | string) {
+    const userId = typeof user === 'string' ? user : user.sub;
+    const userRole = typeof user === 'string' ? null : user.role;
+
+    const order = await this.prisma.order.findFirst({
+      where: {
+        OR: [{ id: orderId }, { orderNumber: orderId }],
+      },
+      include: {
+        items: true,
+        assignments: {
+          where: { taskType: AssignmentTaskType.DESIGN, status: AssignmentStatus.ACTIVE },
+        },
+      },
     });
 
     if (!order) throw new NotFoundException(`Order '${orderId}' not found`);
 
+    const activeAssignment = order.assignments[0];
+    if (activeAssignment && activeAssignment.assignedUserId !== userId && userRole !== UserRole.ADMIN_MANAGER && userRole !== UserRole.OPERATIONAL_MANAGER) {
+      throw new ForbiddenException('This design task is assigned to another designer.');
+    }
+
     await this.auditService.log({
-      actorId: designerId,
+      actorId: userId,
       action: 'CLAIM_DESIGN_JOB',
       entity: 'Order',
       entityId: order.id,
@@ -541,14 +617,32 @@ export class ArtworkService {
       prepressNotes?: string;
       resolutionDpi?: number;
     },
-    designerId: string,
+    user: JwtPayload | string,
   ) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: { items: { include: { artworkVersions: true } } },
+    const userId = typeof user === 'string' ? user : user.sub;
+    const userRole = typeof user === 'string' ? null : user.role;
+
+    const order = await this.prisma.order.findFirst({
+      where: {
+        OR: [{ id: orderId }, { orderNumber: orderId }],
+      },
+      include: {
+        items: { include: { artworkVersions: true } },
+        assignments: {
+          where: { taskType: AssignmentTaskType.DESIGN, status: AssignmentStatus.ACTIVE },
+        },
+      },
     });
 
     if (!order) throw new NotFoundException(`Order '${orderId}' not found`);
+
+    // Security check: individual ownership
+    if (userRole === UserRole.DESIGNER_PREPRESS) {
+      const isAssigned = order.assignments.some((a) => a.assignedUserId === userId);
+      if (!isAssigned) {
+        throw new ForbiddenException('You cannot complete a design task assigned to another designer.');
+      }
+    }
 
     const item = order.items[0];
     if (!item) throw new BadRequestException('Order contains no items to attach design artwork to.');
@@ -575,7 +669,7 @@ export class ArtworkService {
           isApproved: true,
           approvedAt: new Date(),
           prepressNotes: dto.prepressNotes || 'Completed by in-house studio team',
-          uploadedBy: designerId,
+          uploadedBy: userId,
         },
       });
 
@@ -587,7 +681,21 @@ export class ArtworkService {
         },
       });
 
-      // 3. Transition Master Order to ARTWORK_APPROVED
+      // 3. Mark the active DESIGN OrderAssignment as COMPLETED
+      await tx.orderAssignment.updateMany({
+        where: {
+          orderId: order.id,
+          taskType: AssignmentTaskType.DESIGN,
+          status: AssignmentStatus.ACTIVE,
+        },
+        data: {
+          status: AssignmentStatus.COMPLETED,
+          completedAt: new Date(),
+          reason: dto.prepressNotes || 'Design finalized and verified by designer',
+        },
+      });
+
+      // 4. Transition Master Order to ARTWORK_APPROVED
       const updatedOrder = await tx.order.update({
         where: { id: order.id },
         data: {
@@ -596,13 +704,13 @@ export class ArtworkService {
         },
       });
 
-      // 4. Record sequential status history
+      // 5. Record sequential status history
       await tx.orderStatusHistory.create({
         data: {
           orderId: order.id,
           fromStatus: order.status,
           toStatus: OrderStatus.ARTWORK_APPROVED,
-          changedById: designerId,
+          changedById: userId,
           reason: `Design completed by studio team (v${nextVersion}). Ready for OE Operational Review.`,
           notes: dto.prepressNotes,
         },
@@ -612,7 +720,7 @@ export class ArtworkService {
     });
 
     await this.auditService.log({
-      actorId: designerId,
+      actorId: userId,
       action: 'DESIGN_COMPLETED',
       entity: 'Order',
       entityId: order.id,

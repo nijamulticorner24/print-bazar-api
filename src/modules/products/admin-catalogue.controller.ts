@@ -54,6 +54,8 @@ import {
   CreatePricingRuleDto,
   UpdatePricingRuleDto,
   BatchPricingRulesDto,
+  CreateReusableAttributeDto,
+  UpdateReusableAttributeDto,
 } from './dto/catalogue.dto';
 
 @Controller('admin')
@@ -440,6 +442,48 @@ export class AdminCatalogueController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.catalogueService.saveBatchPricingRules(productId, dto, user?.sub);
+  }
+
+  // ==========================================
+  // REUSABLE ATTRIBUTES LIBRARY
+  // ==========================================
+
+  @Get('catalogue/attributes')
+  async listReusableAttributes() {
+    return this.catalogueService.listReusableAttributes();
+  }
+
+  @Get('catalogue/attributes/:id')
+  async getReusableAttributeById(@Param('id') id: string) {
+    return this.catalogueService.getReusableAttributeById(id);
+  }
+
+  @Post('catalogue/attributes')
+  @Roles(UserRole.ADMIN_MANAGER)
+  async createReusableAttribute(
+    @Body() dto: CreateReusableAttributeDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.catalogueService.createReusableAttribute(dto, user?.sub);
+  }
+
+  @Put('catalogue/attributes/:id')
+  @Roles(UserRole.ADMIN_MANAGER)
+  async updateReusableAttribute(
+    @Param('id') id: string,
+    @Body() dto: UpdateReusableAttributeDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.catalogueService.updateReusableAttribute(id, dto, user?.sub);
+  }
+
+  @Delete('catalogue/attributes/:id')
+  @Roles(UserRole.ADMIN_MANAGER)
+  async deleteReusableAttribute(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.catalogueService.deleteReusableAttribute(id, user?.sub);
   }
 }
 

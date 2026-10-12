@@ -24,8 +24,8 @@ let JobCardsController = class JobCardsController {
     constructor(jobCardEngine) {
         this.jobCardEngine = jobCardEngine;
     }
-    async listJobCards(status, station) {
-        return this.jobCardEngine.listJobCards({ status, station });
+    async listJobCards(status, station, user) {
+        return this.jobCardEngine.listJobCards({ status, station, user });
     }
     async generateJobCard(orderItemId, user) {
         return this.jobCardEngine.generateJobCardForOrderItem(orderItemId, user.sub);
@@ -37,10 +37,10 @@ let JobCardsController = class JobCardsController {
         return this.jobCardEngine.assignMachine(id, machineId);
     }
     async startJob(id, user) {
-        return this.jobCardEngine.startJob(id, user.sub);
+        return this.jobCardEngine.startJob(id, user);
     }
-    async completeStation(id, nextStation) {
-        return this.jobCardEngine.completeStation(id, nextStation);
+    async completeStation(id, nextStation, user) {
+        return this.jobCardEngine.completeStation(id, nextStation, user);
     }
 };
 exports.JobCardsController = JobCardsController;
@@ -49,8 +49,9 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'List shop floor job cards filtered by status or work center station' }),
     __param(0, (0, common_1.Query)('status')),
     __param(1, (0, common_1.Query)('station')),
+    __param(2, (0, auth_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], JobCardsController.prototype, "listJobCards", null);
 __decorate([
@@ -94,8 +95,9 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Handover Job Card to subsequent work center station' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)('nextStation')),
+    __param(2, (0, auth_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], JobCardsController.prototype, "completeStation", null);
 exports.JobCardsController = JobCardsController = __decorate([

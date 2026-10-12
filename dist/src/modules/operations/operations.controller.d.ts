@@ -587,11 +587,11 @@ export declare class OperationsController {
             status: import(".prisma/client").$Enums.AssignmentStatus;
             orderId: string;
             completedAt: Date | null;
-            reason: string | null;
             taskType: import(".prisma/client").$Enums.AssignmentTaskType;
             assignedUserId: string;
             assignedByUserId: string;
             assignedAt: Date;
+            reason: string | null;
         }) | null;
         activeProductionAssignment: ({
             assignedUser: {
@@ -613,11 +613,11 @@ export declare class OperationsController {
             status: import(".prisma/client").$Enums.AssignmentStatus;
             orderId: string;
             completedAt: Date | null;
-            reason: string | null;
             taskType: import(".prisma/client").$Enums.AssignmentTaskType;
             assignedUserId: string;
             assignedByUserId: string;
             assignedAt: Date;
+            reason: string | null;
         }) | null;
         assignmentHistory: ({
             assignedUser: {
@@ -639,11 +639,11 @@ export declare class OperationsController {
             status: import(".prisma/client").$Enums.AssignmentStatus;
             orderId: string;
             completedAt: Date | null;
-            reason: string | null;
             taskType: import(".prisma/client").$Enums.AssignmentTaskType;
             assignedUserId: string;
             assignedByUserId: string;
             assignedAt: Date;
+            reason: string | null;
         })[];
         operationalNotes: {
             id: string;
@@ -732,9 +732,9 @@ export declare class OperationsController {
                     createdAt: Date;
                     description: string;
                     jobCardId: string;
-                    isResolved: boolean;
                     reasonCode: string;
                     reportedBy: string;
+                    isResolved: boolean;
                     resolvedBy: string | null;
                     resolvedAt: Date | null;
                 }[];
@@ -919,11 +919,11 @@ export declare class OperationsController {
             status: import(".prisma/client").$Enums.AssignmentStatus;
             orderId: string;
             completedAt: Date | null;
-            reason: string | null;
             taskType: import(".prisma/client").$Enums.AssignmentTaskType;
             assignedUserId: string;
             assignedByUserId: string;
             assignedAt: Date;
+            reason: string | null;
         })[];
         id: string;
         createdAt: Date;
@@ -979,13 +979,13 @@ export declare class OperationsController {
             id: string;
             createdAt: Date;
             orderId: string | null;
+            reason: string | null;
             actorType: string;
             action: string;
             entity: string;
             entityId: string;
             previousState: import("@prisma/client/runtime/library").JsonValue | null;
             newState: import("@prisma/client/runtime/library").JsonValue | null;
-            reason: string | null;
             ipAddress: string | null;
             userAgent: string | null;
             actorId: string | null;
@@ -1008,11 +1008,11 @@ export declare class OperationsController {
             status: import(".prisma/client").$Enums.AssignmentStatus;
             orderId: string;
             completedAt: Date | null;
-            reason: string | null;
             taskType: import(".prisma/client").$Enums.AssignmentTaskType;
             assignedUserId: string;
             assignedByUserId: string;
             assignedAt: Date;
+            reason: string | null;
         })[];
         notes: {
             id: string;
@@ -1043,11 +1043,11 @@ export declare class OperationsController {
         status: import(".prisma/client").$Enums.AssignmentStatus;
         orderId: string;
         completedAt: Date | null;
-        reason: string | null;
         taskType: import(".prisma/client").$Enums.AssignmentTaskType;
         assignedUserId: string;
         assignedByUserId: string;
         assignedAt: Date;
+        reason: string | null;
     }>;
     assignProductionOperator(id: string, body: AssignProductionOperatorDto, user: JwtPayload): Promise<{
         assignedUser: {
@@ -1068,11 +1068,11 @@ export declare class OperationsController {
         status: import(".prisma/client").$Enums.AssignmentStatus;
         orderId: string;
         completedAt: Date | null;
-        reason: string | null;
         taskType: import(".prisma/client").$Enums.AssignmentTaskType;
         assignedUserId: string;
         assignedByUserId: string;
         assignedAt: Date;
+        reason: string | null;
     }>;
     addNote(id: string, body: CreateOperationalNoteDto, user: JwtPayload): Promise<{
         id: string;

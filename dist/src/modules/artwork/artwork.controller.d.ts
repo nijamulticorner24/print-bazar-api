@@ -140,7 +140,7 @@ export declare class ArtworkController {
         approvedAt: Date | null;
     }>;
     requestRevision(body: RequestRevisionDto, user: JwtPayload): Promise<boolean>;
-    getDesignQueue(search?: string): Promise<{
+    getDesignQueue(search?: string, user?: JwtPayload): Promise<{
         id: string;
         orderId: string;
         orderNumber: string;
@@ -233,6 +233,14 @@ export declare class ArtworkController {
             prepressNotes: string | null;
             uploadedBy: string;
             approvedAt: Date | null;
+        };
+        assignedDesignerId: string | null;
+        assignedDesignerName: string | null;
+        assignedDesigner: {
+            id: string;
+            email: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
         };
     }[]>;
     claimDesignJob(orderId: string, user: JwtPayload): Promise<{

@@ -8,6 +8,7 @@ import { JwtPayload } from '../../common/types/roles';
 
 import { JobCardEngineService } from '../job-cards/job-card-engine.service';
 import { WorkflowStateService } from '../workflow/workflow-state.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 describe('OperationsService (Operational Manager Coordinator)', () => {
   let service: OperationsService;
@@ -78,6 +79,7 @@ describe('OperationsService (Operational Manager Coordinator)', () => {
         { provide: AuditService, useValue: mockAudit },
         { provide: JobCardEngineService, useValue: mockJobCardEngine },
         { provide: WorkflowStateService, useValue: mockWorkflowState },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();
 

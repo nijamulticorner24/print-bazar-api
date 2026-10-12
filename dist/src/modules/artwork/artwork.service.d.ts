@@ -1,6 +1,7 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { JwtPayload } from '../../common/types/roles';
 export interface RegisterArtworkDto {
     orderItemId: string;
     originalFileName: string;
@@ -59,7 +60,7 @@ export declare class ArtworkService {
         uploadedBy: string;
         approvedAt: Date | null;
     }>;
-    submitForCustomerApproval(artworkVersionId: string, prepressNotes: string, staffId: string): Promise<{
+    submitForCustomerApproval(artworkVersionId: string, prepressNotes: string, user: JwtPayload | string): Promise<{
         id: string;
         createdAt: Date;
         status: import(".prisma/client").$Enums.ArtworkStatus;
@@ -167,7 +168,7 @@ export declare class ArtworkService {
         mimeType: string;
         timestamp: string;
     }>;
-    getDesignQueue(search?: string): Promise<{
+    getDesignQueue(search?: string, user?: JwtPayload): Promise<{
         id: string;
         orderId: string;
         orderNumber: string;
@@ -261,8 +262,16 @@ export declare class ArtworkService {
             uploadedBy: string;
             approvedAt: Date | null;
         };
+        assignedDesignerId: string | null;
+        assignedDesignerName: string | null;
+        assignedDesigner: {
+            id: string;
+            email: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        };
     }[]>;
-    claimDesignJob(orderId: string, designerId: string): Promise<{
+    claimDesignJob(orderId: string, user: JwtPayload | string): Promise<{
         success: boolean;
         message: string;
     }>;
@@ -273,7 +282,7 @@ export declare class ArtworkService {
         fileSize?: number;
         prepressNotes?: string;
         resolutionDpi?: number;
-    }, designerId: string): Promise<{
+    }, user: JwtPayload | string): Promise<{
         artwork: {
             id: string;
             createdAt: Date;

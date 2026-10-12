@@ -2,6 +2,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JobCardStatus } from '@prisma/client';
+import { JwtPayload } from '../../common/types/roles';
 export declare class JobCardEngineService {
     private readonly prisma;
     private readonly auditService;
@@ -32,6 +33,7 @@ export declare class JobCardEngineService {
     listJobCards(params?: {
         status?: JobCardStatus;
         station?: string;
+        user?: JwtPayload;
     }): Promise<({
         operator: {
             id: string;
@@ -118,7 +120,7 @@ export declare class JobCardEngineService {
         startedAt: Date | null;
         completedAt: Date | null;
     }>;
-    startJob(jobCardId: string, operatorId: string): Promise<{
+    startJob(jobCardId: string, user: JwtPayload | string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -138,7 +140,7 @@ export declare class JobCardEngineService {
         startedAt: Date | null;
         completedAt: Date | null;
     }>;
-    completeStation(jobCardId: string, nextStation: string): Promise<{
+    completeStation(jobCardId: string, nextStation: string, user?: JwtPayload): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;

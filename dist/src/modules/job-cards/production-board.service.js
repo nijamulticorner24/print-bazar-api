@@ -38,8 +38,25 @@ let ProductionBoardService = ProductionBoardService_1 = class ProductionBoardSer
                 orderBy: { sortOrder: 'asc' },
             });
         }
+        const jobCardsWhere = {};
+        if (user.role === client_1.UserRole.PRODUCTION_OPERATOR) {
+            jobCardsWhere.OR = [
+                { operatorId: user.sub },
+                {
+                    order: {
+                        assignments: {
+                            some: {
+                                assignedUserId: user.sub,
+                                taskType: client_1.AssignmentTaskType.PRODUCTION,
+                                status: client_1.AssignmentStatus.ACTIVE,
+                            },
+                        },
+                    },
+                },
+            ];
+        }
         const jobCards = await this.prisma.jobCard.findMany({
-            where: {},
+            where: jobCardsWhere,
             include: {
                 order: {
                     include: {
@@ -226,7 +243,10 @@ let ProductionBoardService = ProductionBoardService_1 = class ProductionBoardSer
         if (filters.machineId && filters.machineId !== 'ALL') {
             filteredCards = filteredCards.filter((c) => c.machine?.id === filters.machineId);
         }
-        if (filters.operatorId && filters.operatorId !== 'ALL') {
+        if (user.role === client_1.UserRole.PRODUCTION_OPERATOR) {
+            filteredCards = filteredCards.filter((c) => c.operator?.id === user.sub);
+        }
+        else if (filters.operatorId && filters.operatorId !== 'ALL') {
             filteredCards = filteredCards.filter((c) => c.operator?.id === filters.operatorId);
         }
         if (filters.priority && filters.priority !== 'ALL') {
@@ -418,8 +438,26 @@ let ProductionBoardService = ProductionBoardService_1 = class ProductionBoardSer
         if (!job) {
             throw new common_1.NotFoundException(`JobCard '${jobId}' not found.`);
         }
-        const { targetColumnKey, reason, machineId, operatorId, managerOverrideReason } = dto;
+        if (user.role === client_1.UserRole.PRODUCTION_OPERATOR) {
+            const isAssigned = job.operatorId === user.sub ||
+                (await this.prisma.orderAssignment.findFirst({
+                    where: {
+                        orderId: job.orderId,
+                        assignedUserId: user.sub,
+                        taskType: client_1.AssignmentTaskType.PRODUCTION,
+                        status: client_1.AssignmentStatus.ACTIVE,
+                    },
+                }));
+            if (!isAssigned) {
+                throw new common_1.ForbiddenException('You cannot transition a production job assigned to another operator.');
+            }
+        }
+        const targetColumnKey = dto.targetColumnKey || dto.toStationKey || '';
+        const { reason, machineId, operatorId, managerOverrideReason } = dto;
         const isManager = user.role === client_1.UserRole.ADMIN_MANAGER;
+        if (!targetColumnKey) {
+            throw new common_1.BadRequestException('targetColumnKey is required');
+        }
         if (managerOverrideReason && !isManager) {
             throw new common_1.ForbiddenException('Only ADMIN_MANAGER can supply a manager override reason.');
         }
@@ -539,6 +577,20 @@ let ProductionBoardService = ProductionBoardService_1 = class ProductionBoardSer
                         reasonCode: targetColumnKey,
                         description: reason,
                         reportedBy: user.sub,
+                    },
+                });
+            }
+            if (['PACKING', 'READY_FOR_DISPATCH', 'DISPATCHED'].includes(targetColumnKey)) {
+                await tx.orderAssignment.updateMany({
+                    where: {
+                        orderId: job.orderId,
+                        taskType: client_1.AssignmentTaskType.PRODUCTION,
+                        status: client_1.AssignmentStatus.ACTIVE,
+                    },
+                    data: {
+                        status: client_1.AssignmentStatus.COMPLETED,
+                        completedAt: new Date(),
+                        reason: `Production step completed: moved to ${targetColumnKey}`,
                     },
                 });
             }

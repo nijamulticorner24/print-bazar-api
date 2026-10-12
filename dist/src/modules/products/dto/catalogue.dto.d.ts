@@ -246,3 +246,43 @@ export declare class UpdatePricingRuleDto {
 export declare class BatchPricingRulesDto {
     rules: CreatePricingRuleDto[];
 }
+export declare class CreateReusableAttributeDto {
+    name: string;
+    code: string;
+    type?: ProductFieldTypeDto;
+    description?: string;
+    options: Array<{
+        label: string;
+        value: string;
+        priceModifierType?: string;
+        priceModifier?: number;
+        isDefault?: boolean;
+        isActive?: boolean;
+        imageUrl?: string;
+        fileCount?: number;
+        fileSlotLabels?: string[];
+        sortOrder?: number;
+    }>;
+    sortOrder?: number;
+    isActive?: boolean;
+}
+export declare class UpdateReusableAttributeDto {
+    name?: string;
+    code?: string;
+    type?: ProductFieldTypeDto;
+    description?: string;
+    options?: Array<{
+        label: string;
+        value: string;
+        priceModifierType?: string;
+        priceModifier?: number;
+        isDefault?: boolean;
+        isActive?: boolean;
+        imageUrl?: string;
+        fileCount?: number;
+        fileSlotLabels?: string[];
+        sortOrder?: number;
+    }>;
+    sortOrder?: number;
+    isActive?: boolean;
+}

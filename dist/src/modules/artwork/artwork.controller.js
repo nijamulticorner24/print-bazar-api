@@ -78,7 +78,7 @@ let ArtworkController = class ArtworkController {
         return this.artworkService.registerArtworkVersion(body, user.sub);
     }
     async submitForApproval(artworkVersionId, prepressNotes, user) {
-        return this.artworkService.submitForCustomerApproval(artworkVersionId, prepressNotes, user.sub);
+        return this.artworkService.submitForCustomerApproval(artworkVersionId, prepressNotes, user);
     }
     async approveProof(body, user, req) {
         return this.artworkService.approveProof({ ...body, ipAddress: req.ip }, user.sub);
@@ -86,14 +86,14 @@ let ArtworkController = class ArtworkController {
     async requestRevision(body, user) {
         return this.artworkService.requestRevision(body, user.sub);
     }
-    async getDesignQueue(search) {
-        return this.artworkService.getDesignQueue(search);
+    async getDesignQueue(search, user) {
+        return this.artworkService.getDesignQueue(search, user);
     }
     async claimDesignJob(orderId, user) {
-        return this.artworkService.claimDesignJob(orderId, user.sub);
+        return this.artworkService.claimDesignJob(orderId, user);
     }
     async completeDesignJob(orderId, body, user) {
-        return this.artworkService.completeDesignJob(orderId, body, user.sub);
+        return this.artworkService.completeDesignJob(orderId, body, user);
     }
 };
 exports.ArtworkController = ArtworkController;
@@ -138,7 +138,7 @@ __decorate([
 ], ArtworkController.prototype, "registerArtwork", null);
 __decorate([
     (0, common_1.Post)('submit-proof/:artworkVersionId'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.DESIGNER_PREPRESS, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.DESIGNER_PREPRESS, roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
     (0, swagger_1.ApiOperation)({ summary: 'Designer submits proof and requests customer sign-off' }),
     __param(0, (0, common_1.Param)('artworkVersionId')),
     __param(1, (0, common_1.Body)('prepressNotes')),
@@ -168,11 +168,12 @@ __decorate([
 ], ArtworkController.prototype, "requestRevision", null);
 __decorate([
     (0, common_1.Get)('design-queue'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.DESIGNER_PREPRESS, roles_1.UserRole.ADMIN_MANAGER),
-    (0, swagger_1.ApiOperation)({ summary: 'Get all orders in the Design Team queue' }),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.DESIGNER_PREPRESS, roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, swagger_1.ApiOperation)({ summary: 'Get personal design queue for authenticated designer, or full queue for OE/Admin' }),
     __param(0, (0, common_1.Query)('search')),
+    __param(1, (0, auth_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ArtworkController.prototype, "getDesignQueue", null);
 __decorate([
@@ -187,7 +188,7 @@ __decorate([
 ], ArtworkController.prototype, "claimDesignJob", null);
 __decorate([
     (0, common_1.Post)('design/:orderId/complete'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.DESIGNER_PREPRESS, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.DESIGNER_PREPRESS, roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
     (0, swagger_1.ApiOperation)({ summary: 'Designer submits completed design, creating approved artwork and releasing order to Pre-Production QC' }),
     __param(0, (0, common_1.Param)('orderId')),
     __param(1, (0, common_1.Body)()),

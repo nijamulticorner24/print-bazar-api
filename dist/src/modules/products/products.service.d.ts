@@ -214,29 +214,7 @@ export declare class ProductsService {
         codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     }>;
     listCategories(): Promise<({
-        parent: {
-            id: string;
-            name: string;
-            slug: string;
-        } | null;
-        children: ({
-            _count: {
-                products: number;
-            };
-        } & {
-            id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            slug: string;
-            description: string | null;
-            image: string | null;
-            sortOrder: number;
-            parentId: string | null;
-        })[];
         _count: {
-            children: number;
             products: number;
         };
     } & {

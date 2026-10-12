@@ -15,6 +15,8 @@ import {
   UserRole,
   Priority,
   ArtworkStatus,
+  AssignmentTaskType,
+  AssignmentStatus,
   Prisma,
 } from '@prisma/client';
 import { JwtPayload } from '../../common/types/roles';
@@ -161,10 +163,28 @@ export class ProductionBoardService {
     }
 
     // 2. Fetch active Job Cards with all necessary relations
+    const jobCardsWhere: Prisma.JobCardWhereInput = {};
+
+    // Strict individual ownership: Operator ONLY sees tasks assigned to their user ID
+    if (user.role === UserRole.PRODUCTION_OPERATOR) {
+      jobCardsWhere.OR = [
+        { operatorId: user.sub },
+        {
+          order: {
+            assignments: {
+              some: {
+                assignedUserId: user.sub,
+                taskType: AssignmentTaskType.PRODUCTION,
+                status: AssignmentStatus.ACTIVE,
+              },
+            },
+          },
+        },
+      ];
+    }
+
     const jobCards = await this.prisma.jobCard.findMany({
-      where: {
-        // Exclude completely finalized orders that are delivered long ago if needed
-      },
+      where: jobCardsWhere,
       include: {
         order: {
           include: {
@@ -372,7 +392,9 @@ export class ProductionBoardService {
       filteredCards = filteredCards.filter((c) => c.machine?.id === filters.machineId);
     }
 
-    if (filters.operatorId && filters.operatorId !== 'ALL') {
+    if (user.role === UserRole.PRODUCTION_OPERATOR) {
+      filteredCards = filteredCards.filter((c) => c.operator?.id === user.sub);
+    } else if (filters.operatorId && filters.operatorId !== 'ALL') {
       filteredCards = filteredCards.filter((c) => c.operator?.id === filters.operatorId);
     }
 
@@ -651,8 +673,31 @@ export class ProductionBoardService {
       throw new NotFoundException(`JobCard '${jobId}' not found.`);
     }
 
-    const { targetColumnKey, reason, machineId, operatorId, managerOverrideReason } = dto;
+    // Security check: Individual operator ownership enforcement first
+    if (user.role === UserRole.PRODUCTION_OPERATOR) {
+      const isAssigned =
+        job.operatorId === user.sub ||
+        (await this.prisma.orderAssignment.findFirst({
+          where: {
+            orderId: job.orderId,
+            assignedUserId: user.sub,
+            taskType: AssignmentTaskType.PRODUCTION,
+            status: AssignmentStatus.ACTIVE,
+          },
+        }));
+
+      if (!isAssigned) {
+        throw new ForbiddenException('You cannot transition a production job assigned to another operator.');
+      }
+    }
+
+    const targetColumnKey = dto.targetColumnKey || (dto as any).toStationKey || '';
+    const { reason, machineId, operatorId, managerOverrideReason } = dto;
     const isManager = user.role === UserRole.ADMIN_MANAGER;
+
+    if (!targetColumnKey) {
+      throw new BadRequestException('targetColumnKey is required');
+    }
 
     // 1. Manager Override Policy Check
     if (managerOverrideReason && !isManager) {
@@ -801,6 +846,22 @@ export class ProductionBoardService {
             reasonCode: targetColumnKey,
             description: reason,
             reportedBy: user.sub,
+          },
+        });
+      }
+
+      // If job moves to packing or beyond, mark active PRODUCTION assignment as completed
+      if (['PACKING', 'READY_FOR_DISPATCH', 'DISPATCHED'].includes(targetColumnKey)) {
+        await tx.orderAssignment.updateMany({
+          where: {
+            orderId: job.orderId,
+            taskType: AssignmentTaskType.PRODUCTION,
+            status: AssignmentStatus.ACTIVE,
+          },
+          data: {
+            status: AssignmentStatus.COMPLETED,
+            completedAt: new Date(),
+            reason: `Production step completed: moved to ${targetColumnKey}`,
           },
         });
       }

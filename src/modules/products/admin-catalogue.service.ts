@@ -24,6 +24,8 @@ import {
   CreatePricingRuleDto,
   UpdatePricingRuleDto,
   BatchPricingRulesDto,
+  CreateReusableAttributeDto,
+  UpdateReusableAttributeDto,
   ProductStatusDto,
   ProductFieldTypeDto,
 } from './dto/catalogue.dto';
@@ -45,20 +47,11 @@ export class AdminCatalogueService {
   async listCategories() {
     return this.prisma.productCategory.findMany({
       include: {
-        parent: {
-          select: { id: true, name: true, slug: true },
-        },
-        children: {
-          include: {
-            _count: { select: { products: true } },
-          },
-          orderBy: { sortOrder: 'asc' },
-        },
         _count: {
-          select: { products: true, children: true },
+          select: { products: true },
         },
       },
-      orderBy: [{ sortOrder: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
     });
   }
 
@@ -66,15 +59,6 @@ export class AdminCatalogueService {
     const cat = await this.prisma.productCategory.findUnique({
       where: { id },
       include: {
-        parent: {
-          select: { id: true, name: true, slug: true },
-        },
-        children: {
-          include: {
-            _count: { select: { products: true } },
-          },
-          orderBy: { sortOrder: 'asc' },
-        },
         products: {
           select: {
             id: true,
@@ -86,7 +70,7 @@ export class AdminCatalogueService {
           },
         },
         _count: {
-          select: { products: true, children: true },
+          select: { products: true },
         },
       },
     });
@@ -104,27 +88,18 @@ export class AdminCatalogueService {
       throw new ConflictException(`Category slug '${dto.slug}' already exists`);
     }
 
-    if (dto.parentId) {
-      const parent = await this.prisma.productCategory.findUnique({
-        where: { id: dto.parentId },
-      });
-      if (!parent) {
-        throw new NotFoundException(`Parent category with ID '${dto.parentId}' not found`);
-      }
-    }
-
     const category = await this.prisma.productCategory.create({
       data: {
         name: dto.name,
         slug: dto.slug,
         description: dto.description,
         image: dto.image,
-        parentId: dto.parentId || null,
+        parentId: null,
         sortOrder: dto.sortOrder ?? 0,
         isActive: dto.isActive ?? true,
       },
       include: {
-        parent: { select: { id: true, name: true, slug: true } },
+        _count: { select: { products: true } },
       },
     });
 
@@ -151,18 +126,6 @@ export class AdminCatalogueService {
       }
     }
 
-    if (dto.parentId) {
-      if (dto.parentId === id) {
-        throw new BadRequestException('A category cannot be its own parent');
-      }
-      const parent = await this.prisma.productCategory.findUnique({
-        where: { id: dto.parentId },
-      });
-      if (!parent) {
-        throw new NotFoundException(`Parent category with ID '${dto.parentId}' not found`);
-      }
-    }
-
     const updated = await this.prisma.productCategory.update({
       where: { id },
       data: {
@@ -170,14 +133,12 @@ export class AdminCatalogueService {
         slug: dto.slug,
         description: dto.description,
         image: dto.image,
-        parentId: dto.parentId !== undefined ? (dto.parentId || null) : undefined,
+        parentId: null,
         sortOrder: dto.sortOrder,
         isActive: dto.isActive,
       },
       include: {
-        parent: { select: { id: true, name: true, slug: true } },
-        children: true,
-        _count: { select: { products: true, children: true } },
+        _count: { select: { products: true } },
       },
     });
 
@@ -202,15 +163,6 @@ export class AdminCatalogueService {
     if (productCount > 0) {
       throw new BadRequestException(
         `Cannot delete category '${category.name}' because it contains ${productCount} products. Reassign or delete products first.`,
-      );
-    }
-
-    const subcategoryCount = await this.prisma.productCategory.count({
-      where: { parentId: id },
-    });
-    if (subcategoryCount > 0) {
-      throw new BadRequestException(
-        `Cannot delete category '${category.name}' because it has ${subcategoryCount} subcategories. Delete or move the subcategories first.`,
       );
     }
 
@@ -1456,6 +1408,240 @@ export class AdminCatalogueService {
 
       return updatedRules;
     });
+  }
+
+  // ==========================================
+  // REUSABLE ATTRIBUTES LIBRARY MANAGEMENT
+  // ==========================================
+
+  async listReusableAttributes() {
+    const existing = await (this.prisma as any).reusableAttribute.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    if (existing.length > 0) {
+      return existing;
+    }
+
+    // Auto-seed standard reusable attributes if none exist
+    const defaultAttributes = [
+      {
+        name: 'Material',
+        code: 'material',
+        type: 'SELECT',
+        description: 'Paper stock & substrate texture',
+        options: [
+          { label: '350 GSM Heavy Art Card', value: '350gsm_art_card', priceModifier: 0, priceModifierType: 'FIXED', isDefault: true },
+          { label: '400 GSM Ultra-Thick Velvet Board', value: '400gsm_velvet_board', priceModifier: 0.60, priceModifierType: 'FIXED' },
+          { label: '300 GSM Natural Uncoated Ivory', value: '300gsm_ivory', priceModifier: 0.40, priceModifierType: 'FIXED' },
+          { label: '350 GSM Recycled Kraft Stock', value: '350gsm_kraft', priceModifier: 0.35, priceModifierType: 'FIXED' },
+        ],
+        sortOrder: 1,
+      },
+      {
+        name: 'GSM',
+        code: 'gsm',
+        type: 'SELECT',
+        description: 'Paper weight and density rating',
+        options: [
+          { label: '300 GSM', value: '300_gsm', priceModifier: 0, priceModifierType: 'FIXED', isDefault: true },
+          { label: '350 GSM (+₹0.25/pc)', value: '350_gsm', priceModifier: 0.25, priceModifierType: 'FIXED' },
+          { label: '400 GSM (+₹0.50/pc)', value: '400_gsm', priceModifier: 0.50, priceModifierType: 'FIXED' },
+          { label: '450 GSM Heavy (+₹0.75/pc)', value: '450_gsm', priceModifier: 0.75, priceModifierType: 'FIXED' },
+        ],
+        sortOrder: 2,
+      },
+      {
+        name: 'Lamination',
+        code: 'lamination',
+        type: 'SELECT',
+        description: 'Protective thermal lamination coating',
+        options: [
+          { label: 'Silky Thermal Matt Lamination', value: 'thermal_matt', priceModifier: 0.35, priceModifierType: 'FIXED', isDefault: true },
+          { label: 'Feather Soft Velvet Touch', value: 'velvet_touch', priceModifier: 0.85, priceModifierType: 'FIXED' },
+          { label: 'High Gloss Lamination', value: 'gloss', priceModifier: 0.25, priceModifierType: 'FIXED' },
+          { label: 'None (Uncoated Natural)', value: 'none', priceModifier: 0, priceModifierType: 'FIXED' },
+        ],
+        sortOrder: 3,
+      },
+      {
+        name: 'Printing Location',
+        code: 'printing_location',
+        type: 'RADIO',
+        description: 'Single side or double side press impression',
+        options: [
+          { label: 'Front Side Only', value: 'front_only', priceModifier: 0, priceModifierType: 'FIXED', isDefault: true },
+          { label: 'Both Sides (Front & Back)', value: 'front_and_back', priceModifier: 0.50, priceModifierType: 'FIXED' },
+        ],
+        sortOrder: 4,
+      },
+      {
+        name: 'Special Finish',
+        code: 'special_finish',
+        type: 'SELECT',
+        description: 'Premium tactile embellishments and foil effects',
+        options: [
+          { label: 'None (Standard Print)', value: 'none', priceModifier: 0, priceModifierType: 'FIXED', isDefault: true },
+          { label: 'Raised Spot UV Gloss', value: 'spot_uv', priceModifier: 0.65, priceModifierType: 'FIXED' },
+          { label: 'Executive Gold Foil Stamping', value: 'gold_foil', priceModifier: 1.20, priceModifierType: 'FIXED' },
+          { label: 'Executive Silver Foil Stamping', value: 'silver_foil', priceModifier: 1.10, priceModifierType: 'FIXED' },
+          { label: 'Embossing / Debossing', value: 'embossing', priceModifier: 0.95, priceModifierType: 'FIXED' },
+        ],
+        sortOrder: 5,
+      },
+      {
+        name: 'Color',
+        code: 'color',
+        type: 'SELECT',
+        description: 'Color reproduction mode',
+        options: [
+          { label: 'Full Color CMYK (4/4)', value: 'cmyk_full', priceModifier: 0, priceModifierType: 'FIXED', isDefault: true },
+          { label: 'Monochrome Grayscale / Black (1/1)', value: 'monochrome', priceModifier: -0.20, priceModifierType: 'FIXED' },
+          { label: 'CMYK + 1 Metallic Pantone Spot', value: 'pantone_spot', priceModifier: 1.50, priceModifierType: 'FIXED' },
+        ],
+        sortOrder: 6,
+      },
+      {
+        name: 'Size',
+        code: 'size',
+        type: 'SELECT',
+        description: 'Cut dimension options',
+        options: [
+          { label: 'Standard Visiting Card (89 x 54 mm)', value: 'standard_89x54', priceModifier: 0, priceModifierType: 'FIXED', isDefault: true },
+          { label: 'Square Format (65 x 65 mm)', value: 'square_65x65', priceModifier: 0.20, priceModifierType: 'FIXED' },
+          { label: 'European Slim (85 x 40 mm)', value: 'slim_85x40', priceModifier: 0.15, priceModifierType: 'FIXED' },
+          { label: 'Custom Dimension', value: 'custom', priceModifier: 0.50, priceModifierType: 'FIXED' },
+        ],
+        sortOrder: 7,
+      },
+      {
+        name: 'Printing Type',
+        code: 'printing_type',
+        type: 'SELECT',
+        description: 'Manufacturing press methodology',
+        options: [
+          { label: 'Digital Offset (Fast Turnaround)', value: 'digital_offset', priceModifier: 0, priceModifierType: 'FIXED', isDefault: true },
+          { label: 'Sheetfed Commercial Offset (Bulk Runs)', value: 'sheetfed_offset', priceModifier: -0.10, priceModifierType: 'FIXED' },
+          { label: 'High-Definition UV Flatbed', value: 'uv_flatbed', priceModifier: 1.00, priceModifierType: 'FIXED' },
+        ],
+        sortOrder: 8,
+      },
+    ];
+
+    for (const attr of defaultAttributes) {
+      await (this.prisma as any).reusableAttribute.create({
+        data: {
+          name: attr.name,
+          code: attr.code,
+          type: attr.type as any,
+          description: attr.description,
+          options: attr.options as any,
+          sortOrder: attr.sortOrder,
+          isActive: true,
+        },
+      });
+    }
+
+    return (this.prisma as any).reusableAttribute.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+  }
+
+  async getReusableAttributeById(id: string) {
+    const attr = await (this.prisma as any).reusableAttribute.findUnique({ where: { id } });
+    if (!attr) {
+      throw new NotFoundException(`Reusable attribute with ID '${id}' not found`);
+    }
+    return attr;
+  }
+
+  async createReusableAttribute(dto: CreateReusableAttributeDto, actorId?: string) {
+    const existing = await (this.prisma as any).reusableAttribute.findUnique({
+      where: { code: dto.code },
+    });
+    if (existing) {
+      throw new ConflictException(`Attribute code '${dto.code}' already exists`);
+    }
+
+    const created = await (this.prisma as any).reusableAttribute.create({
+      data: {
+        name: dto.name,
+        code: dto.code,
+        type: (dto.type as any) || 'SELECT',
+        description: dto.description,
+        options: dto.options as any,
+        sortOrder: dto.sortOrder ?? 0,
+        isActive: dto.isActive ?? true,
+      },
+    });
+
+    await this.auditService.log({
+      actorId,
+      action: 'REUSABLE_ATTRIBUTE_CREATED',
+      entity: 'ReusableAttribute',
+      entityId: created.id,
+      newState: created,
+    });
+
+    return created;
+  }
+
+  async updateReusableAttribute(id: string, dto: UpdateReusableAttributeDto, actorId?: string) {
+    const current = await this.getReusableAttributeById(id);
+
+    if (dto.code && dto.code !== current.code) {
+      const existing = await (this.prisma as any).reusableAttribute.findUnique({
+        where: { code: dto.code },
+      });
+      if (existing) {
+        throw new ConflictException(`Attribute code '${dto.code}' already exists`);
+      }
+    }
+
+    const updated = await (this.prisma as any).reusableAttribute.update({
+      where: { id },
+      data: {
+        ...(dto.name ? { name: dto.name } : {}),
+        ...(dto.code ? { code: dto.code } : {}),
+        ...(dto.type ? { type: dto.type as any } : {}),
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.options ? { options: dto.options as any } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+    });
+
+    await this.auditService.log({
+      actorId,
+      action: 'REUSABLE_ATTRIBUTE_UPDATED',
+      entity: 'ReusableAttribute',
+      entityId: id,
+      previousState: current,
+      newState: updated,
+    });
+
+    return updated;
+  }
+
+  async deleteReusableAttribute(id: string, actorId?: string) {
+    const current = await this.getReusableAttributeById(id);
+
+    await (this.prisma as any).reusableAttribute.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    await this.auditService.log({
+      actorId,
+      action: 'REUSABLE_ATTRIBUTE_DELETED',
+      entity: 'ReusableAttribute',
+      entityId: id,
+      previousState: current,
+    });
+
+    return { success: true, message: `Attribute '${current.name}' deleted successfully` };
   }
 }
 

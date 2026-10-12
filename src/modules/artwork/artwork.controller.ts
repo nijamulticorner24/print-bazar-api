@@ -109,14 +109,14 @@ export class ArtworkController {
   }
 
   @Post('submit-proof/:artworkVersionId')
-  @Roles(UserRole.DESIGNER_PREPRESS, UserRole.ADMIN_MANAGER)
+  @Roles(UserRole.DESIGNER_PREPRESS, UserRole.OPERATIONAL_MANAGER, UserRole.ADMIN_MANAGER)
   @ApiOperation({ summary: 'Designer submits proof and requests customer sign-off' })
   async submitForApproval(
     @Param('artworkVersionId') artworkVersionId: string,
     @Body('prepressNotes') prepressNotes: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.artworkService.submitForCustomerApproval(artworkVersionId, prepressNotes, user.sub);
+    return this.artworkService.submitForCustomerApproval(artworkVersionId, prepressNotes, user);
   }
 
   @Post('approve-proof')
@@ -142,10 +142,13 @@ export class ArtworkController {
   }
 
   @Get('design-queue')
-  @Roles(UserRole.DESIGNER_PREPRESS, UserRole.ADMIN_MANAGER)
-  @ApiOperation({ summary: 'Get all orders in the Design Team queue' })
-  async getDesignQueue(@Query('search') search?: string) {
-    return this.artworkService.getDesignQueue(search);
+  @Roles(UserRole.DESIGNER_PREPRESS, UserRole.OPERATIONAL_MANAGER, UserRole.ADMIN_MANAGER)
+  @ApiOperation({ summary: 'Get personal design queue for authenticated designer, or full queue for OE/Admin' })
+  async getDesignQueue(
+    @Query('search') search?: string,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    return this.artworkService.getDesignQueue(search, user);
   }
 
   @Post('design/:orderId/claim')
@@ -155,11 +158,11 @@ export class ArtworkController {
     @Param('orderId') orderId: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.artworkService.claimDesignJob(orderId, user.sub);
+    return this.artworkService.claimDesignJob(orderId, user);
   }
 
   @Post('design/:orderId/complete')
-  @Roles(UserRole.DESIGNER_PREPRESS, UserRole.ADMIN_MANAGER)
+  @Roles(UserRole.DESIGNER_PREPRESS, UserRole.OPERATIONAL_MANAGER, UserRole.ADMIN_MANAGER)
   @ApiOperation({ summary: 'Designer submits completed design, creating approved artwork and releasing order to Pre-Production QC' })
   async completeDesignJob(
     @Param('orderId') orderId: string,
@@ -174,6 +177,6 @@ export class ArtworkController {
     },
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.artworkService.completeDesignJob(orderId, body, user.sub);
+    return this.artworkService.completeDesignJob(orderId, body, user);
   }
 }

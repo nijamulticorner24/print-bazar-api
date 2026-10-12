@@ -824,3 +824,89 @@ export class BatchPricingRulesDto {
   rules: CreatePricingRuleDto[];
 }
 
+// ==========================================
+// REUSABLE ATTRIBUTE DTOS
+// ==========================================
+
+export class CreateReusableAttributeDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  code: string;
+
+  @IsEnum(ProductFieldTypeDto)
+  @IsOptional()
+  type?: ProductFieldTypeDto;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsArray()
+  @IsNotEmpty()
+  options: Array<{
+    label: string;
+    value: string;
+    priceModifierType?: string;
+    priceModifier?: number;
+    isDefault?: boolean;
+    isActive?: boolean;
+    imageUrl?: string;
+    fileCount?: number;
+    fileSlotLabels?: string[];
+    sortOrder?: number;
+  }>;
+
+  @IsNumber()
+  @IsOptional()
+  sortOrder?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+}
+
+export class UpdateReusableAttributeDto {
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  code?: string;
+
+  @IsEnum(ProductFieldTypeDto)
+  @IsOptional()
+  type?: ProductFieldTypeDto;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsArray()
+  @IsOptional()
+  options?: Array<{
+    label: string;
+    value: string;
+    priceModifierType?: string;
+    priceModifier?: number;
+    isDefault?: boolean;
+    isActive?: boolean;
+    imageUrl?: string;
+    fileCount?: number;
+    fileSlotLabels?: string[];
+    sortOrder?: number;
+  }>;
+
+  @IsNumber()
+  @IsOptional()
+  sortOrder?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+}
+

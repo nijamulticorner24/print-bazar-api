@@ -18,8 +18,9 @@ export class JobCardsController {
   async listJobCards(
     @Query('status') status?: JobCardStatus,
     @Query('station') station?: string,
+    @CurrentUser() user?: JwtPayload,
   ) {
-    return this.jobCardEngine.listJobCards({ status, station });
+    return this.jobCardEngine.listJobCards({ status, station, user });
   }
 
   @Post('auto-generate/:orderItemId')
@@ -46,12 +47,16 @@ export class JobCardsController {
   @Post(':id/start')
   @ApiOperation({ summary: 'Operator starts printing/production run on assigned machine' })
   async startJob(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    return this.jobCardEngine.startJob(id, user.sub);
+    return this.jobCardEngine.startJob(id, user);
   }
 
   @Post(':id/complete-station')
   @ApiOperation({ summary: 'Handover Job Card to subsequent work center station' })
-  async completeStation(@Param('id') id: string, @Body('nextStation') nextStation: string) {
-    return this.jobCardEngine.completeStation(id, nextStation);
+  async completeStation(
+    @Param('id') id: string,
+    @Body('nextStation') nextStation: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.jobCardEngine.completeStation(id, nextStation, user);
   }
 }

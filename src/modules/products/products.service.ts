@@ -8,13 +8,7 @@ export class ProductsService {
   async listProducts(categoryId?: string, search?: string) {
     let categoryCondition: any = undefined;
     if (categoryId) {
-      // Find subcategories if any
-      const subcats = await this.prisma.productCategory.findMany({
-        where: { parentId: categoryId, isActive: true },
-        select: { id: true },
-      });
-      const catIds = [categoryId, ...subcats.map((s) => s.id)];
-      categoryCondition = { categoryId: { in: catIds } };
+      categoryCondition = { categoryId };
     }
 
     const where: any = {
@@ -103,29 +97,10 @@ export class ProductsService {
     return this.prisma.productCategory.findMany({
       where: { isActive: true },
       include: {
-        parent: {
-          select: { id: true, name: true, slug: true },
-        },
-        children: {
-          where: { isActive: true },
-          orderBy: { sortOrder: 'asc' },
-          include: {
-            _count: {
-              select: {
-                products: {
-                  where: { status: 'PUBLISHED', isActive: true },
-                },
-              },
-            },
-          },
-        },
         _count: {
           select: {
             products: {
               where: { status: 'PUBLISHED', isActive: true },
-            },
-            children: {
-              where: { isActive: true },
             },
           },
         },

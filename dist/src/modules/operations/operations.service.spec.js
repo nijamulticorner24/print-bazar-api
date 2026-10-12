@@ -8,6 +8,7 @@ const audit_service_1 = require("../audit/audit.service");
 const client_1 = require("@prisma/client");
 const job_card_engine_service_1 = require("../job-cards/job-card-engine.service");
 const workflow_state_service_1 = require("../workflow/workflow-state.service");
+const event_emitter_1 = require("@nestjs/event-emitter");
 describe('OperationsService (Operational Manager Coordinator)', () => {
     let service;
     let prisma;
@@ -71,6 +72,7 @@ describe('OperationsService (Operational Manager Coordinator)', () => {
                 { provide: audit_service_1.AuditService, useValue: mockAudit },
                 { provide: job_card_engine_service_1.JobCardEngineService, useValue: mockJobCardEngine },
                 { provide: workflow_state_service_1.WorkflowStateService, useValue: mockWorkflowState },
+                { provide: event_emitter_1.EventEmitter2, useValue: { emit: jest.fn() } },
             ],
         }).compile();
         service = module.get(operations_service_1.OperationsService);

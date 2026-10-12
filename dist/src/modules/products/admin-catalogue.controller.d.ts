@@ -1,69 +1,26 @@
 import { AdminCatalogueService } from './admin-catalogue.service';
 import { JwtPayload } from '../../common/types/roles';
-import { CreateCategoryDto, UpdateCategoryDto, CreateProductDto, UpdateProductDto, CreateProductFieldDto, UpdateProductFieldDto, CreateFieldOptionDto, UpdateFieldOptionDto, CreateProductImageDto, CreateInventoryItemDto, UpdateInventoryItemDto, RecordStockMovementDto, CreatePricingRuleDto, UpdatePricingRuleDto, BatchPricingRulesDto } from './dto/catalogue.dto';
+import { CreateCategoryDto, UpdateCategoryDto, CreateProductDto, UpdateProductDto, CreateProductFieldDto, UpdateProductFieldDto, CreateFieldOptionDto, UpdateFieldOptionDto, CreateProductImageDto, CreateInventoryItemDto, UpdateInventoryItemDto, RecordStockMovementDto, CreatePricingRuleDto, UpdatePricingRuleDto, BatchPricingRulesDto, CreateReusableAttributeDto, UpdateReusableAttributeDto } from './dto/catalogue.dto';
 export declare class AdminCatalogueController {
     private readonly catalogueService;
     constructor(catalogueService: AdminCatalogueService);
     listCategories(): Promise<({
-        parent: {
-            id: string;
-            name: string;
-            slug: string;
-        } | null;
-        children: ({
-            _count: {
-                products: number;
-            };
-        } & {
-            id: string;
-            name: string;
-            slug: string;
-            description: string | null;
-            image: string | null;
-            sortOrder: number;
-            isActive: boolean;
-            parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        })[];
         _count: {
-            children: number;
             products: number;
         };
     } & {
         id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         image: string | null;
         sortOrder: number;
-        isActive: boolean;
         parentId: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     getCategoryById(id: string): Promise<{
-        parent: {
-            id: string;
-            name: string;
-            slug: string;
-        } | null;
-        children: ({
-            _count: {
-                products: number;
-            };
-        } & {
-            id: string;
-            name: string;
-            slug: string;
-            description: string | null;
-            image: string | null;
-            sortOrder: number;
-            isActive: boolean;
-            parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        })[];
         products: {
             id: string;
             name: string;
@@ -73,72 +30,51 @@ export declare class AdminCatalogueController {
             basePrice: import("@prisma/client/runtime/library").Decimal;
         }[];
         _count: {
-            children: number;
             products: number;
         };
     } & {
         id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         image: string | null;
         sortOrder: number;
-        isActive: boolean;
         parentId: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     createCategory(dto: CreateCategoryDto, user: JwtPayload): Promise<{
-        parent: {
-            id: string;
-            name: string;
-            slug: string;
-        } | null;
-    } & {
-        id: string;
-        name: string;
-        slug: string;
-        description: string | null;
-        image: string | null;
-        sortOrder: number;
-        isActive: boolean;
-        parentId: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-    }>;
-    updateCategory(id: string, dto: UpdateCategoryDto, user: JwtPayload): Promise<{
-        parent: {
-            id: string;
-            name: string;
-            slug: string;
-        } | null;
-        children: {
-            id: string;
-            name: string;
-            slug: string;
-            description: string | null;
-            image: string | null;
-            sortOrder: number;
-            isActive: boolean;
-            parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
-        }[];
         _count: {
-            children: number;
             products: number;
         };
     } & {
         id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         image: string | null;
         sortOrder: number;
-        isActive: boolean;
         parentId: string | null;
+    }>;
+    updateCategory(id: string, dto: UpdateCategoryDto, user: JwtPayload): Promise<{
+        _count: {
+            products: number;
+        };
+    } & {
+        id: string;
+        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
+        slug: string;
+        description: string | null;
+        image: string | null;
+        sortOrder: number;
+        parentId: string | null;
     }>;
     deleteCategory(id: string, user: JwtPayload): Promise<{
         success: boolean;
@@ -153,12 +89,12 @@ export declare class AdminCatalogueController {
             };
             images: {
                 id: string;
-                sortOrder: number;
                 createdAt: Date;
                 updatedAt: Date;
-                isPrimary: boolean;
+                sortOrder: number;
                 productId: string;
                 storageKey: string | null;
+                isPrimary: boolean;
                 url: string;
                 altText: string | null;
                 caption: string | null;
@@ -166,27 +102,27 @@ export declare class AdminCatalogueController {
             fields: ({
                 options: {
                     id: string;
-                    sortOrder: number;
                     isActive: boolean;
                     createdAt: Date;
                     updatedAt: Date;
+                    sortOrder: number;
                     label: string;
-                    fieldId: string;
                     value: string;
                     priceModifierType: string;
                     priceModifier: import("@prisma/client/runtime/library").Decimal;
                     isDefault: boolean;
+                    fieldId: string;
                 }[];
             } & {
                 id: string;
-                description: string | null;
-                sortOrder: number;
                 createdAt: Date;
                 updatedAt: Date;
+                type: import(".prisma/client").$Enums.ProductFieldType;
+                description: string | null;
+                sortOrder: number;
                 productId: string;
                 label: string;
                 key: string;
-                type: import(".prisma/client").$Enums.ProductFieldType;
                 placeholder: string | null;
                 defaultValue: string | null;
                 isRequired: boolean;
@@ -197,15 +133,15 @@ export declare class AdminCatalogueController {
             })[];
         } & {
             id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             sortOrder: number;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-            categoryId: string;
             sku: string;
+            categoryId: string;
             status: import(".prisma/client").$Enums.ProductStatus;
             pricingModel: string;
             basePrice: import("@prisma/client/runtime/library").Decimal;
@@ -243,24 +179,24 @@ export declare class AdminCatalogueController {
     getProductById(id: string): Promise<{
         category: {
             id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
-            isActive: boolean;
             parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         };
         images: {
             id: string;
-            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
-            isPrimary: boolean;
+            sortOrder: number;
             productId: string;
             storageKey: string | null;
+            isPrimary: boolean;
             url: string;
             altText: string | null;
             caption: string | null;
@@ -268,27 +204,27 @@ export declare class AdminCatalogueController {
         fields: ({
             options: {
                 id: string;
-                sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
+                sortOrder: number;
                 label: string;
-                fieldId: string;
                 value: string;
                 priceModifierType: string;
                 priceModifier: import("@prisma/client/runtime/library").Decimal;
                 isDefault: boolean;
+                fieldId: string;
             }[];
         } & {
             id: string;
-            description: string | null;
-            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
+            type: import(".prisma/client").$Enums.ProductFieldType;
+            description: string | null;
+            sortOrder: number;
             productId: string;
             label: string;
             key: string;
-            type: import(".prisma/client").$Enums.ProductFieldType;
             placeholder: string | null;
             defaultValue: string | null;
             isRequired: boolean;
@@ -301,22 +237,22 @@ export declare class AdminCatalogueController {
             id: string;
             createdAt: Date;
             productId: string;
+            unitPrice: import("@prisma/client/runtime/library").Decimal;
             minQty: number;
             maxQty: number;
             attributeCombination: import("@prisma/client/runtime/library").JsonValue;
-            unitPrice: import("@prisma/client/runtime/library").Decimal;
         }[];
     } & {
         id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        categoryId: string;
         sku: string;
+        categoryId: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
@@ -347,24 +283,24 @@ export declare class AdminCatalogueController {
     createProduct(dto: CreateProductDto, user: JwtPayload): Promise<{
         category: {
             id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
-            isActive: boolean;
             parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         };
         images: {
             id: string;
-            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
-            isPrimary: boolean;
+            sortOrder: number;
             productId: string;
             storageKey: string | null;
+            isPrimary: boolean;
             url: string;
             altText: string | null;
             caption: string | null;
@@ -372,27 +308,27 @@ export declare class AdminCatalogueController {
         fields: ({
             options: {
                 id: string;
-                sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
+                sortOrder: number;
                 label: string;
-                fieldId: string;
                 value: string;
                 priceModifierType: string;
                 priceModifier: import("@prisma/client/runtime/library").Decimal;
                 isDefault: boolean;
+                fieldId: string;
             }[];
         } & {
             id: string;
-            description: string | null;
-            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
+            type: import(".prisma/client").$Enums.ProductFieldType;
+            description: string | null;
+            sortOrder: number;
             productId: string;
             label: string;
             key: string;
-            type: import(".prisma/client").$Enums.ProductFieldType;
             placeholder: string | null;
             defaultValue: string | null;
             isRequired: boolean;
@@ -405,22 +341,22 @@ export declare class AdminCatalogueController {
             id: string;
             createdAt: Date;
             productId: string;
+            unitPrice: import("@prisma/client/runtime/library").Decimal;
             minQty: number;
             maxQty: number;
             attributeCombination: import("@prisma/client/runtime/library").JsonValue;
-            unitPrice: import("@prisma/client/runtime/library").Decimal;
         }[];
     } & {
         id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        categoryId: string;
         sku: string;
+        categoryId: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
@@ -451,24 +387,24 @@ export declare class AdminCatalogueController {
     updateProduct(id: string, dto: UpdateProductDto, user: JwtPayload): Promise<{
         category: {
             id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
-            isActive: boolean;
             parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         };
         images: {
             id: string;
-            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
-            isPrimary: boolean;
+            sortOrder: number;
             productId: string;
             storageKey: string | null;
+            isPrimary: boolean;
             url: string;
             altText: string | null;
             caption: string | null;
@@ -476,27 +412,27 @@ export declare class AdminCatalogueController {
         fields: ({
             options: {
                 id: string;
-                sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
+                sortOrder: number;
                 label: string;
-                fieldId: string;
                 value: string;
                 priceModifierType: string;
                 priceModifier: import("@prisma/client/runtime/library").Decimal;
                 isDefault: boolean;
+                fieldId: string;
             }[];
         } & {
             id: string;
-            description: string | null;
-            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
+            type: import(".prisma/client").$Enums.ProductFieldType;
+            description: string | null;
+            sortOrder: number;
             productId: string;
             label: string;
             key: string;
-            type: import(".prisma/client").$Enums.ProductFieldType;
             placeholder: string | null;
             defaultValue: string | null;
             isRequired: boolean;
@@ -509,22 +445,22 @@ export declare class AdminCatalogueController {
             id: string;
             createdAt: Date;
             productId: string;
+            unitPrice: import("@prisma/client/runtime/library").Decimal;
             minQty: number;
             maxQty: number;
             attributeCombination: import("@prisma/client/runtime/library").JsonValue;
-            unitPrice: import("@prisma/client/runtime/library").Decimal;
         }[];
     } & {
         id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        categoryId: string;
         sku: string;
+        categoryId: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
@@ -555,24 +491,24 @@ export declare class AdminCatalogueController {
     duplicateProduct(id: string, user: JwtPayload): Promise<{
         category: {
             id: string;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
             name: string;
             slug: string;
             description: string | null;
             image: string | null;
             sortOrder: number;
-            isActive: boolean;
             parentId: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         };
         images: {
             id: string;
-            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
-            isPrimary: boolean;
+            sortOrder: number;
             productId: string;
             storageKey: string | null;
+            isPrimary: boolean;
             url: string;
             altText: string | null;
             caption: string | null;
@@ -580,27 +516,27 @@ export declare class AdminCatalogueController {
         fields: ({
             options: {
                 id: string;
-                sortOrder: number;
                 isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
+                sortOrder: number;
                 label: string;
-                fieldId: string;
                 value: string;
                 priceModifierType: string;
                 priceModifier: import("@prisma/client/runtime/library").Decimal;
                 isDefault: boolean;
+                fieldId: string;
             }[];
         } & {
             id: string;
-            description: string | null;
-            sortOrder: number;
             createdAt: Date;
             updatedAt: Date;
+            type: import(".prisma/client").$Enums.ProductFieldType;
+            description: string | null;
+            sortOrder: number;
             productId: string;
             label: string;
             key: string;
-            type: import(".prisma/client").$Enums.ProductFieldType;
             placeholder: string | null;
             defaultValue: string | null;
             isRequired: boolean;
@@ -613,22 +549,22 @@ export declare class AdminCatalogueController {
             id: string;
             createdAt: Date;
             productId: string;
+            unitPrice: import("@prisma/client/runtime/library").Decimal;
             minQty: number;
             maxQty: number;
             attributeCombination: import("@prisma/client/runtime/library").JsonValue;
-            unitPrice: import("@prisma/client/runtime/library").Decimal;
         }[];
     } & {
         id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        categoryId: string;
         sku: string;
+        categoryId: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
@@ -658,15 +594,15 @@ export declare class AdminCatalogueController {
     }>;
     publishProduct(id: string, user: JwtPayload): Promise<{
         id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        categoryId: string;
         sku: string;
+        categoryId: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
@@ -696,15 +632,15 @@ export declare class AdminCatalogueController {
     }>;
     archiveProduct(id: string, user: JwtPayload): Promise<{
         id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        categoryId: string;
         sku: string;
+        categoryId: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
@@ -734,15 +670,15 @@ export declare class AdminCatalogueController {
     }>;
     deleteProduct(id: string, user: JwtPayload): Promise<{
         id: string;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
         name: string;
         slug: string;
         description: string | null;
         sortOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        categoryId: string;
         sku: string;
+        categoryId: string;
         status: import(".prisma/client").$Enums.ProductStatus;
         pricingModel: string;
         basePrice: import("@prisma/client/runtime/library").Decimal;
@@ -776,27 +712,27 @@ export declare class AdminCatalogueController {
     addField(productId: string, dto: CreateProductFieldDto, user: JwtPayload): Promise<({
         options: {
             id: string;
-            sortOrder: number;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             label: string;
-            fieldId: string;
             value: string;
             priceModifierType: string;
             priceModifier: import("@prisma/client/runtime/library").Decimal;
             isDefault: boolean;
+            fieldId: string;
         }[];
     } & {
         id: string;
-        description: string | null;
-        sortOrder: number;
         createdAt: Date;
         updatedAt: Date;
+        type: import(".prisma/client").$Enums.ProductFieldType;
+        description: string | null;
+        sortOrder: number;
         productId: string;
         label: string;
         key: string;
-        type: import(".prisma/client").$Enums.ProductFieldType;
         placeholder: string | null;
         defaultValue: string | null;
         isRequired: boolean;
@@ -808,27 +744,27 @@ export declare class AdminCatalogueController {
     updateField(fieldId: string, dto: UpdateProductFieldDto, user: JwtPayload): Promise<{
         options: {
             id: string;
-            sortOrder: number;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
+            sortOrder: number;
             label: string;
-            fieldId: string;
             value: string;
             priceModifierType: string;
             priceModifier: import("@prisma/client/runtime/library").Decimal;
             isDefault: boolean;
+            fieldId: string;
         }[];
     } & {
         id: string;
-        description: string | null;
-        sortOrder: number;
         createdAt: Date;
         updatedAt: Date;
+        type: import(".prisma/client").$Enums.ProductFieldType;
+        description: string | null;
+        sortOrder: number;
         productId: string;
         label: string;
         key: string;
-        type: import(".prisma/client").$Enums.ProductFieldType;
         placeholder: string | null;
         defaultValue: string | null;
         isRequired: boolean;
@@ -843,29 +779,29 @@ export declare class AdminCatalogueController {
     }>;
     addFieldOption(fieldId: string, dto: CreateFieldOptionDto, user: JwtPayload): Promise<{
         id: string;
-        sortOrder: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        sortOrder: number;
         label: string;
-        fieldId: string;
         value: string;
         priceModifierType: string;
         priceModifier: import("@prisma/client/runtime/library").Decimal;
         isDefault: boolean;
+        fieldId: string;
     }>;
     updateFieldOption(optionId: string, dto: UpdateFieldOptionDto, user: JwtPayload): Promise<{
         id: string;
-        sortOrder: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        sortOrder: number;
         label: string;
-        fieldId: string;
         value: string;
         priceModifierType: string;
         priceModifier: import("@prisma/client/runtime/library").Decimal;
         isDefault: boolean;
+        fieldId: string;
     }>;
     deleteFieldOption(optionId: string, user: JwtPayload): Promise<{
         success: boolean;
@@ -873,12 +809,12 @@ export declare class AdminCatalogueController {
     }>;
     uploadProductImage(productId: string, file: Express.Multer.File, altText?: string, caption?: string, isPrimary?: string | boolean, user?: JwtPayload): Promise<{
         id: string;
-        sortOrder: number;
         createdAt: Date;
         updatedAt: Date;
-        isPrimary: boolean;
+        sortOrder: number;
         productId: string;
         storageKey: string | null;
+        isPrimary: boolean;
         url: string;
         altText: string | null;
         caption: string | null;
@@ -892,12 +828,12 @@ export declare class AdminCatalogueController {
     }>;
     addProductImage(productId: string, dto: CreateProductImageDto, user: JwtPayload): Promise<{
         id: string;
-        sortOrder: number;
         createdAt: Date;
         updatedAt: Date;
-        isPrimary: boolean;
+        sortOrder: number;
         productId: string;
         storageKey: string | null;
+        isPrimary: boolean;
         url: string;
         altText: string | null;
         caption: string | null;
@@ -920,19 +856,19 @@ export declare class AdminCatalogueController {
             createdAt: Date;
             type: import(".prisma/client").$Enums.StockMovementType;
             notes: string | null;
-            inventoryItemId: string;
             quantity: import("@prisma/client/runtime/library").Decimal;
-            balanceAfter: import("@prisma/client/runtime/library").Decimal;
             referenceType: string | null;
             referenceId: string | null;
+            inventoryItemId: string;
+            balanceAfter: import("@prisma/client/runtime/library").Decimal;
             performedById: string | null;
         }[];
     } & {
         id: string;
-        name: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         sku: string;
         category: import(".prisma/client").$Enums.InventoryCategory;
         unit: string;
@@ -945,10 +881,10 @@ export declare class AdminCatalogueController {
     })[]>;
     createInventoryItem(dto: CreateInventoryItemDto, user: JwtPayload): Promise<{
         id: string;
-        name: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         sku: string;
         category: import(".prisma/client").$Enums.InventoryCategory;
         unit: string;
@@ -961,10 +897,10 @@ export declare class AdminCatalogueController {
     }>;
     updateInventoryItem(id: string, dto: UpdateInventoryItemDto, user: JwtPayload): Promise<{
         id: string;
-        name: string;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
         sku: string;
         category: import(".prisma/client").$Enums.InventoryCategory;
         unit: string;
@@ -981,19 +917,19 @@ export declare class AdminCatalogueController {
             createdAt: Date;
             type: import(".prisma/client").$Enums.StockMovementType;
             notes: string | null;
-            inventoryItemId: string;
             quantity: import("@prisma/client/runtime/library").Decimal;
-            balanceAfter: import("@prisma/client/runtime/library").Decimal;
             referenceType: string | null;
             referenceId: string | null;
+            inventoryItemId: string;
+            balanceAfter: import("@prisma/client/runtime/library").Decimal;
             performedById: string | null;
         };
         item: {
             id: string;
-            name: string;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
+            name: string;
             sku: string;
             category: import(".prisma/client").$Enums.InventoryCategory;
             unit: string;
@@ -1017,39 +953,39 @@ export declare class AdminCatalogueController {
         createdAt: Date;
         type: import(".prisma/client").$Enums.StockMovementType;
         notes: string | null;
-        inventoryItemId: string;
         quantity: import("@prisma/client/runtime/library").Decimal;
-        balanceAfter: import("@prisma/client/runtime/library").Decimal;
         referenceType: string | null;
         referenceId: string | null;
+        inventoryItemId: string;
+        balanceAfter: import("@prisma/client/runtime/library").Decimal;
         performedById: string | null;
     })[]>;
     listPricingRules(productId: string): Promise<{
         id: string;
         createdAt: Date;
         productId: string;
+        unitPrice: import("@prisma/client/runtime/library").Decimal;
         minQty: number;
         maxQty: number;
         attributeCombination: import("@prisma/client/runtime/library").JsonValue;
-        unitPrice: import("@prisma/client/runtime/library").Decimal;
     }[]>;
     addPricingRule(productId: string, dto: CreatePricingRuleDto, user: JwtPayload): Promise<{
         id: string;
         createdAt: Date;
         productId: string;
+        unitPrice: import("@prisma/client/runtime/library").Decimal;
         minQty: number;
         maxQty: number;
         attributeCombination: import("@prisma/client/runtime/library").JsonValue;
-        unitPrice: import("@prisma/client/runtime/library").Decimal;
     }>;
     updatePricingRule(ruleId: string, dto: UpdatePricingRuleDto, user: JwtPayload): Promise<{
         id: string;
         createdAt: Date;
         productId: string;
+        unitPrice: import("@prisma/client/runtime/library").Decimal;
         minQty: number;
         maxQty: number;
         attributeCombination: import("@prisma/client/runtime/library").JsonValue;
-        unitPrice: import("@prisma/client/runtime/library").Decimal;
     }>;
     deletePricingRule(ruleId: string, user: JwtPayload): Promise<{
         success: boolean;
@@ -1059,9 +995,17 @@ export declare class AdminCatalogueController {
         id: string;
         createdAt: Date;
         productId: string;
+        unitPrice: import("@prisma/client/runtime/library").Decimal;
         minQty: number;
         maxQty: number;
         attributeCombination: import("@prisma/client/runtime/library").JsonValue;
-        unitPrice: import("@prisma/client/runtime/library").Decimal;
     }[]>;
+    listReusableAttributes(): Promise<any>;
+    getReusableAttributeById(id: string): Promise<any>;
+    createReusableAttribute(dto: CreateReusableAttributeDto, user: JwtPayload): Promise<any>;
+    updateReusableAttribute(id: string, dto: UpdateReusableAttributeDto, user: JwtPayload): Promise<any>;
+    deleteReusableAttribute(id: string, user: JwtPayload): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }

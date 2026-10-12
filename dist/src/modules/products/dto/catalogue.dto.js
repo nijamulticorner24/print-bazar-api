@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BatchPricingRulesDto = exports.UpdatePricingRuleDto = exports.CreatePricingRuleDto = exports.RecordStockMovementDto = exports.UpdateInventoryItemDto = exports.CreateInventoryItemDto = exports.UpdateProductDto = exports.CreateProductDto = exports.UpdateProductImageDto = exports.CreateProductImageDto = exports.UpdateProductFieldDto = exports.CreateProductFieldDto = exports.UpdateFieldOptionDto = exports.CreateFieldOptionDto = exports.UpdateCategoryDto = exports.CreateCategoryDto = exports.StockMovementTypeDto = exports.InventoryCategoryDto = exports.ProductFieldTypeDto = exports.ProductOptionRequirementDto = exports.ProductStatusDto = void 0;
+exports.UpdateReusableAttributeDto = exports.CreateReusableAttributeDto = exports.BatchPricingRulesDto = exports.UpdatePricingRuleDto = exports.CreatePricingRuleDto = exports.RecordStockMovementDto = exports.UpdateInventoryItemDto = exports.CreateInventoryItemDto = exports.UpdateProductDto = exports.CreateProductDto = exports.UpdateProductImageDto = exports.CreateProductImageDto = exports.UpdateProductFieldDto = exports.CreateProductFieldDto = exports.UpdateFieldOptionDto = exports.CreateFieldOptionDto = exports.UpdateCategoryDto = exports.CreateCategoryDto = exports.StockMovementTypeDto = exports.InventoryCategoryDto = exports.ProductFieldTypeDto = exports.ProductOptionRequirementDto = exports.ProductStatusDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 var ProductStatusDto;
@@ -1138,4 +1138,94 @@ __decorate([
     (0, class_transformer_1.Type)(() => CreatePricingRuleDto),
     __metadata("design:type", Array)
 ], BatchPricingRulesDto.prototype, "rules", void 0);
+class CreateReusableAttributeDto {
+    name;
+    code;
+    type;
+    description;
+    options;
+    sortOrder;
+    isActive;
+}
+exports.CreateReusableAttributeDto = CreateReusableAttributeDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], CreateReusableAttributeDto.prototype, "name", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], CreateReusableAttributeDto.prototype, "code", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(ProductFieldTypeDto),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateReusableAttributeDto.prototype, "type", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateReusableAttributeDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", Array)
+], CreateReusableAttributeDto.prototype, "options", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateReusableAttributeDto.prototype, "sortOrder", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateReusableAttributeDto.prototype, "isActive", void 0);
+class UpdateReusableAttributeDto {
+    name;
+    code;
+    type;
+    description;
+    options;
+    sortOrder;
+    isActive;
+}
+exports.UpdateReusableAttributeDto = UpdateReusableAttributeDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateReusableAttributeDto.prototype, "name", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateReusableAttributeDto.prototype, "code", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(ProductFieldTypeDto),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateReusableAttributeDto.prototype, "type", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateReusableAttributeDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], UpdateReusableAttributeDto.prototype, "options", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateReusableAttributeDto.prototype, "sortOrder", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], UpdateReusableAttributeDto.prototype, "isActive", void 0);
 //# sourceMappingURL=catalogue.dto.js.map

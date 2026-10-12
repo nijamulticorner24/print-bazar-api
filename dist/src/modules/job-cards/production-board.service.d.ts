@@ -180,9 +180,9 @@ export declare class ProductionBoardService {
         description: string | null;
         sortOrder: number;
         key: string;
+        color: string | null;
         mappedStatus: import(".prisma/client").$Enums.OrderStatus | null;
         mappedStation: string | null;
-        color: string | null;
         createdById: string | null;
     }>;
     updateColumn(id: string, dto: UpdateColumnDto, user: JwtPayload): Promise<{
@@ -195,9 +195,9 @@ export declare class ProductionBoardService {
         description: string | null;
         sortOrder: number;
         key: string;
+        color: string | null;
         mappedStatus: import(".prisma/client").$Enums.OrderStatus | null;
         mappedStation: string | null;
-        color: string | null;
         createdById: string | null;
     }>;
     reorderColumns(columnOrders: Array<{
@@ -217,9 +217,9 @@ export declare class ProductionBoardService {
         description: string | null;
         sortOrder: number;
         key: string;
+        color: string | null;
         mappedStatus: import(".prisma/client").$Enums.OrderStatus | null;
         mappedStation: string | null;
-        color: string | null;
         createdById: string | null;
     }>;
     private seedDefaultColumns;

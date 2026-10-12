@@ -530,6 +530,22 @@ model ProductOptionValue {
   @@unique([optionId, code])
 }
 
+model ReusableAttribute {
+  id          String           @id @default(uuid())
+  name        String           // e.g. "Material", "GSM", "Lamination", "Special Finish", "Color", "Size", "Printing Type"
+  code        String           @unique // e.g. "material", "gsm", "lamination"
+  type        ProductFieldType @default(SELECT)
+  description String?
+  options     Json             // Array of { label: string, value: string, priceModifierType?: string, priceModifier?: number, isDefault?: boolean }
+  sortOrder   Int              @default(0)
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([code])
+  @@index([isActive])
+}
+
 model PricingMatrix {
   id                   String   @id @default(uuid())
   productId            String
