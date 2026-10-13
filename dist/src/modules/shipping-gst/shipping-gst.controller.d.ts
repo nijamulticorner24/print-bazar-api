@@ -1,5 +1,5 @@
 import { ShippingGstService } from './shipping-gst.service';
-import { UpdateShippingGstSettingsDto, CreateShippingZoneDto, UpdateShippingZoneDto, CalculateShippingAndTaxDto } from './dto/shipping-gst.dto';
+import { UpdateShippingGstSettingsDto, CreateShippingZoneDto, UpdateShippingZoneDto, CalculateShippingAndTaxDto, UpdateProductShippingSettingsDto, BatchUpdateCategoryShippingSettingsDto } from './dto/shipping-gst.dto';
 import { JwtPayload } from '../../common/types/roles';
 export declare class ShippingGstController {
     private readonly shippingGstService;
@@ -14,4 +14,10 @@ export declare class ShippingGstController {
         success: boolean;
         message: string;
     }>;
+    listProductShippingSettings(): Promise<any[]>;
+    batchUpdateCategoryShippingSettings(dto: BatchUpdateCategoryShippingSettingsDto, user?: JwtPayload): Promise<{
+        updatedCount: number;
+        message: string;
+    }>;
+    updateProductShippingSettings(id: string, dto: UpdateProductShippingSettingsDto, user?: JwtPayload): Promise<any>;
 }

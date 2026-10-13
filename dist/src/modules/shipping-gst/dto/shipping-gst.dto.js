@@ -9,13 +9,19 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CalculateShippingAndTaxDto = exports.UpdateShippingZoneDto = exports.CreateShippingZoneDto = exports.UpdateShippingGstSettingsDto = void 0;
+exports.BatchUpdateCategoryShippingSettingsDto = exports.UpdateProductShippingSettingsDto = exports.QuantityCourierSlabDto = exports.CalculateShippingAndTaxDto = exports.ShippingCalculationItemDto = exports.UpdateShippingZoneDto = exports.CreateShippingZoneDto = exports.UpdateShippingGstSettingsDto = void 0;
 const class_validator_1 = require("class-validator");
 class UpdateShippingGstSettingsDto {
     baseShippingFee;
     gstRate;
     freeShippingThreshold;
     isFreeShippingEnabled;
+    enableWeightCharges;
+    baseWeightKg;
+    weightRatePerKg;
+    enableQuantityCharges;
+    quantityStep;
+    quantitySurchargePerStep;
 }
 exports.UpdateShippingGstSettingsDto = UpdateShippingGstSettingsDto;
 __decorate([
@@ -38,6 +44,40 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], UpdateShippingGstSettingsDto.prototype, "isFreeShippingEnabled", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], UpdateShippingGstSettingsDto.prototype, "enableWeightCharges", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateShippingGstSettingsDto.prototype, "baseWeightKg", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateShippingGstSettingsDto.prototype, "weightRatePerKg", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], UpdateShippingGstSettingsDto.prototype, "enableQuantityCharges", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateShippingGstSettingsDto.prototype, "quantityStep", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateShippingGstSettingsDto.prototype, "quantitySurchargePerStep", void 0);
 class CreateShippingZoneDto {
     zoneName;
     pincodePrefix;
@@ -99,11 +139,56 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
 ], UpdateShippingZoneDto.prototype, "isActive", void 0);
+class ShippingCalculationItemDto {
+    productId;
+    productName;
+    quantity;
+    unitPrice;
+    totalPrice;
+    weightGrams;
+}
+exports.ShippingCalculationItemDto = ShippingCalculationItemDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], ShippingCalculationItemDto.prototype, "productId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], ShippingCalculationItemDto.prototype, "productName", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], ShippingCalculationItemDto.prototype, "quantity", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], ShippingCalculationItemDto.prototype, "unitPrice", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], ShippingCalculationItemDto.prototype, "totalPrice", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], ShippingCalculationItemDto.prototype, "weightGrams", void 0);
 class CalculateShippingAndTaxDto {
     subtotal;
     postalCode;
     deliveryMethod;
     isInterState;
+    items;
+    totalQuantity;
+    totalWeightKg;
 }
 exports.CalculateShippingAndTaxDto = CalculateShippingAndTaxDto;
 __decorate([
@@ -126,4 +211,131 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
 ], CalculateShippingAndTaxDto.prototype, "isInterState", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], CalculateShippingAndTaxDto.prototype, "items", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CalculateShippingAndTaxDto.prototype, "totalQuantity", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CalculateShippingAndTaxDto.prototype, "totalWeightKg", void 0);
+class QuantityCourierSlabDto {
+    minQty;
+    maxQty;
+    charge;
+}
+exports.QuantityCourierSlabDto = QuantityCourierSlabDto;
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], QuantityCourierSlabDto.prototype, "minQty", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], QuantityCourierSlabDto.prototype, "maxQty", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Number)
+], QuantityCourierSlabDto.prototype, "charge", void 0);
+class UpdateProductShippingSettingsDto {
+    shippingChargeType;
+    unitWeightGrams;
+    courierCharge;
+    perAdditionalQtyRate;
+    freeShippingThreshold;
+    quantityCourierSlabs;
+}
+exports.UpdateProductShippingSettingsDto = UpdateProductShippingSettingsDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateProductShippingSettingsDto.prototype, "shippingChargeType", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateProductShippingSettingsDto.prototype, "unitWeightGrams", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateProductShippingSettingsDto.prototype, "courierCharge", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateProductShippingSettingsDto.prototype, "perAdditionalQtyRate", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateProductShippingSettingsDto.prototype, "freeShippingThreshold", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], UpdateProductShippingSettingsDto.prototype, "quantityCourierSlabs", void 0);
+class BatchUpdateCategoryShippingSettingsDto {
+    categoryId;
+    productIds;
+    shippingChargeType;
+    unitWeightGrams;
+    courierCharge;
+    perAdditionalQtyRate;
+    freeShippingThreshold;
+    quantityCourierSlabs;
+}
+exports.BatchUpdateCategoryShippingSettingsDto = BatchUpdateCategoryShippingSettingsDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], BatchUpdateCategoryShippingSettingsDto.prototype, "categoryId", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], BatchUpdateCategoryShippingSettingsDto.prototype, "productIds", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], BatchUpdateCategoryShippingSettingsDto.prototype, "shippingChargeType", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], BatchUpdateCategoryShippingSettingsDto.prototype, "unitWeightGrams", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], BatchUpdateCategoryShippingSettingsDto.prototype, "courierCharge", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], BatchUpdateCategoryShippingSettingsDto.prototype, "perAdditionalQtyRate", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], BatchUpdateCategoryShippingSettingsDto.prototype, "freeShippingThreshold", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], BatchUpdateCategoryShippingSettingsDto.prototype, "quantityCourierSlabs", void 0);
 //# sourceMappingURL=shipping-gst.dto.js.map

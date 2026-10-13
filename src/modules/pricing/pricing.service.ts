@@ -287,7 +287,112 @@ export class PricingService {
     const availableOffers: NonNullable<QuoteItemBreakdown['availableOffers']> = [];
     let matchedSpecificCombo = false;
 
-    if (product.pricingMatrices && product.pricingMatrices.length > 0) {
+    const isSingleTypeProduct =
+      product.pricingModel === 'SINGLE' ||
+      product.pricingModel === 'SINGLE_RANGE' ||
+      (product.tags && product.tags.includes('SINGLE_TYPE'));
+
+    if (isSingleTypeProduct && product.pricingMatrices && product.pricingMatrices.length > 0) {
+      // Single Type Range Pricing Calculation
+      const sortedMatrices = [...product.pricingMatrices].sort((a, b) => a.minQty - b.minQty);
+
+      // Collect available offers for each range
+      for (const m of sortedMatrices) {
+        const combo = (m.attributeCombination as any) || {};
+        const isBase = combo.isBasePrice === true || combo.type === 'BASE' || !combo.attributeCode;
+        if (isBase) {
+          const rulePrice = Number(m.unitPrice);
+          const label = m.minQty === m.maxQty
+            ? `Qty ${m.minQty}: ₹${rulePrice.toFixed(2)}/pc`
+            : `Qty ${m.minQty}–${m.maxQty}: ₹${rulePrice.toFixed(2)}/pc`;
+          availableOffers.push({
+            id: m.id,
+            minQty: m.minQty,
+            maxQty: m.maxQty,
+            discountPercent: originalBasePrice > rulePrice && originalBasePrice > 0
+              ? Math.round(((originalBasePrice - rulePrice) / originalBasePrice) * 100)
+              : 0,
+            unitPrice: rulePrice,
+            label,
+          });
+        }
+      }
+
+      // Find the range rules matching the requested quantity
+      const matchingRangeRules = product.pricingMatrices.filter(
+        (m) => dto.quantity >= m.minQty && (m.maxQty === null || m.maxQty === undefined || dto.quantity <= m.maxQty),
+      );
+
+      if (matchingRangeRules.length > 0) {
+        // 1. Base price rule for this range
+        const baseRule = matchingRangeRules.find((m) => {
+          const combo = (m.attributeCombination as any) || {};
+          return (
+            combo.isBasePrice === true ||
+            combo.type === 'BASE' ||
+            (!combo.attributeCode && !combo.type) ||
+            Object.keys(combo).filter(
+              (k) => !['label', 'rangeLabel', 'quantityRanges', 'discountPercent', 'offerName', 'isBasePrice', 'type'].includes(k),
+            ).length === 0
+          );
+        }) || matchingRangeRules[0];
+
+        baseUnitPrice = Number(baseRule.unitPrice);
+
+        // 2. Additional Attribute / Add-on prices for this range
+        let singleTypeAddonModifier = 0;
+        for (const [fieldKey, userVal] of Object.entries(userSelections)) {
+          if (userVal === undefined || userVal === null || userVal === '') continue;
+
+          const attrRule = matchingRangeRules.find((m) => {
+            const combo = (m.attributeCombination as any) || {};
+            return (
+              (combo.type === 'ATTRIBUTE' &&
+                combo.attributeCode?.toLowerCase() === fieldKey.toLowerCase() &&
+                String(combo.attributeValue)?.toLowerCase() === String(userVal).toLowerCase()) ||
+              (combo[fieldKey] !== undefined && String(combo[fieldKey]) === String(userVal))
+            );
+          });
+
+          if (attrRule) {
+            const rawVal = Number(attrRule.unitPrice || (attrRule.attributeCombination as any)?.extraPrice || 0);
+            const extra = rawVal > baseUnitPrice && baseUnitPrice > 0 ? rawVal - baseUnitPrice : rawVal;
+            if (extra > 0) {
+              singleTypeAddonModifier += extra;
+              const existingSummary = selectedOptionsSummary.find((s) => s.optionCode === fieldKey);
+              if (existingSummary) {
+                existingSummary.priceModifier = extra;
+              }
+            }
+          }
+        }
+
+        // If range-specific attribute modifiers were configured, apply them
+        if (singleTypeAddonModifier > 0) {
+          optionsUnitModifier = singleTypeAddonModifier;
+        }
+
+        // Determine if customer qualifies for volume savings compared to first bracket
+        const firstBaseRule = sortedMatrices.find((m) => {
+          const combo = (m.attributeCombination as any) || {};
+          return combo.isBasePrice === true || combo.type === 'BASE';
+        }) || sortedMatrices[0];
+        const firstRate = Number(firstBaseRule.unitPrice);
+
+        if (firstRate > baseUnitPrice && firstRate > 0) {
+          const savingsPerUnit = firstRate - baseUnitPrice;
+          const disc = Math.round((savingsPerUnit / firstRate) * 100);
+          appliedOffer = {
+            offerId: baseRule.id,
+            minQty: baseRule.minQty,
+            maxQty: baseRule.maxQty,
+            discountPercent: disc,
+            offerName: `Volume Savings (${disc}% OFF for Qty ${baseRule.minQty}–${baseRule.maxQty})`,
+            savingsAmount: Math.round(savingsPerUnit * dto.quantity * 100) / 100,
+          };
+        }
+      }
+    } else if (product.pricingMatrices && product.pricingMatrices.length > 0) {
       const sortedMatrices = [...product.pricingMatrices].sort((a, b) => a.minQty - b.minQty);
 
       // Fetch active reusable attributes to identify which are configured as optional add-ons
@@ -343,13 +448,6 @@ export class PricingService {
               highestMatchSpecificity = 0;
             }
           } else {
-            // Optional add-on validation:
-            // If an attribute rule contains keys that are not active add-ons, do not apply extra charge
-            const allKeysAreAddOns = comboEntries.every(([k]) => addOnCodes.has(k.toLowerCase()));
-            if (!allKeysAreAddOns) {
-              continue;
-            }
-
             // Specific attribute combination rule: verify all combo keys match user selections
             const allMatch = comboEntries.every(([k, v]) => String(userSelections[k]) === String(v));
             if (allMatch && comboEntries.length > highestMatchSpecificity) {

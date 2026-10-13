@@ -56,6 +56,9 @@ exports.ROLE_PERMISSIONS = {
         'production.pause',
         'production.complete',
         'jobcard.read',
+        'operations.read',
+        'operations.write',
+        'operations.assign',
     ],
     [client_1.UserRole.FINAL_QC_INSPECTOR]: [
         'qc.final.read',

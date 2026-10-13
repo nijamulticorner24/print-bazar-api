@@ -671,9 +671,9 @@ async function main() {
     }
     const defaultColumns = [
         {
-            key: 'READY_FOR_PRODUCTION',
-            name: 'READY FOR PRODUCTION',
-            description: 'Artwork approved & operator assigned. Ready for press queue.',
+            key: 'QC_APPROVED',
+            name: 'QC APPROVED',
+            description: 'Pre-Production QC 100% Passed. Ready for machine queue.',
             type: 'SYSTEM',
             mappedStatus: client_1.OrderStatus.PRODUCTION_QUEUE,
             mappedStation: 'PRINTING',

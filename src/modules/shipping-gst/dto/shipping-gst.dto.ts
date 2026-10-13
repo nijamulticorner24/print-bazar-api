@@ -3,6 +3,7 @@ import {
   IsNumber,
   IsBoolean,
   IsOptional,
+  IsArray,
   Min,
   Max,
   IsNotEmpty,
@@ -25,6 +26,36 @@ export class UpdateShippingGstSettingsDto {
 
   @IsBoolean()
   isFreeShippingEnabled: boolean;
+
+  // Weight-wise courier settings
+  @IsBoolean()
+  @IsOptional()
+  enableWeightCharges?: boolean;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  baseWeightKg?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  weightRatePerKg?: number;
+
+  // Quantity-wise courier settings
+  @IsBoolean()
+  @IsOptional()
+  enableQuantityCharges?: boolean;
+
+  @IsNumber()
+  @Min(1)
+  @IsOptional()
+  quantityStep?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  quantitySurchargePerStep?: number;
 }
 
 export class CreateShippingZoneDto {
@@ -70,6 +101,35 @@ export class UpdateShippingZoneDto {
   isActive?: boolean;
 }
 
+export class ShippingCalculationItemDto {
+  @IsString()
+  @IsOptional()
+  productId?: string;
+
+  @IsString()
+  @IsOptional()
+  productName?: string;
+
+  @IsNumber()
+  @Min(1)
+  quantity: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  unitPrice?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  totalPrice?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  weightGrams?: number;
+}
+
 export class CalculateShippingAndTaxDto {
   @IsNumber()
   @Min(0)
@@ -86,4 +146,92 @@ export class CalculateShippingAndTaxDto {
   @IsBoolean()
   @IsOptional()
   isInterState?: boolean;
+
+  @IsOptional()
+  items?: ShippingCalculationItemDto[];
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  totalQuantity?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  totalWeightKg?: number;
 }
+
+export class QuantityCourierSlabDto {
+  @IsNumber()
+  @Min(1)
+  minQty: number;
+
+  @IsNumber()
+  @IsOptional()
+  maxQty?: number;
+
+  @IsNumber()
+  @Min(0)
+  charge: number;
+}
+
+export class UpdateProductShippingSettingsDto {
+  @IsString()
+  @IsOptional()
+  shippingChargeType?: string;
+
+  @IsNumber()
+  @IsOptional()
+  unitWeightGrams?: number;
+
+  @IsNumber()
+  @IsOptional()
+  courierCharge?: number;
+
+  @IsNumber()
+  @IsOptional()
+  perAdditionalQtyRate?: number;
+
+  @IsNumber()
+  @IsOptional()
+  freeShippingThreshold?: number;
+
+  @IsArray()
+  @IsOptional()
+  quantityCourierSlabs?: QuantityCourierSlabDto[];
+}
+
+export class BatchUpdateCategoryShippingSettingsDto {
+  @IsString()
+  @IsOptional()
+  categoryId?: string;
+
+  @IsArray()
+  @IsOptional()
+  productIds?: string[];
+
+  @IsString()
+  @IsOptional()
+  shippingChargeType?: string;
+
+  @IsNumber()
+  @IsOptional()
+  unitWeightGrams?: number;
+
+  @IsNumber()
+  @IsOptional()
+  courierCharge?: number;
+
+  @IsNumber()
+  @IsOptional()
+  perAdditionalQtyRate?: number;
+
+  @IsNumber()
+  @IsOptional()
+  freeShippingThreshold?: number;
+
+  @IsArray()
+  @IsOptional()
+  quantityCourierSlabs?: QuantityCourierSlabDto[];
+}
+

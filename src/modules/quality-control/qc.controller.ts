@@ -25,14 +25,14 @@ export class QualityControlController {
   }
 
   @Get('queue/final')
-  @Roles(UserRole.FINAL_QC_INSPECTOR, UserRole.ADMIN_MANAGER)
+  @Roles(UserRole.FINAL_QC_INSPECTOR, UserRole.ADMIN_MANAGER, UserRole.OPERATIONAL_MANAGER, UserRole.PRODUCTION_OPERATOR)
   @ApiOperation({ summary: 'Get live queue of orders waiting for Final QC' })
   getFinalQCQueue() {
     return this.qcService.getFinalQCQueue();
   }
 
   @Post('inspect')
-  @Roles(UserRole.FINAL_QC_INSPECTOR, UserRole.ADMIN_MANAGER)
+  @Roles(UserRole.FINAL_QC_INSPECTOR, UserRole.ADMIN_MANAGER, UserRole.OPERATIONAL_MANAGER, UserRole.PRODUCTION_OPERATOR)
   @ApiOperation({ summary: 'Submit Final physical QC inspection checklist' })
   async submitInspection(@Body() body: SubmitQCDto, @CurrentUser() user: JwtPayload) {
     return this.qcService.submitInspection(body, user.sub);

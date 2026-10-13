@@ -25,7 +25,7 @@ let ShippingGstController = class ShippingGstController {
         this.shippingGstService = shippingGstService;
     }
     async calculateQuote(dto) {
-        return this.shippingGstService.calculateShippingAndTax(dto.subtotal, dto.postalCode, dto.deliveryMethod || 'COURIER', dto.isInterState || false);
+        return this.shippingGstService.calculateShippingAndTax(dto.subtotal, dto.postalCode, dto.deliveryMethod || 'COURIER', dto.isInterState || false, dto.items, dto.totalQuantity, dto.totalWeightKg);
     }
     async getSettings() {
         return this.shippingGstService.getSettings();
@@ -44,6 +44,15 @@ let ShippingGstController = class ShippingGstController {
     }
     async deleteZone(id, user) {
         return this.shippingGstService.deleteZone(id, user?.sub);
+    }
+    async listProductShippingSettings() {
+        return this.shippingGstService.listProductShippingSettings();
+    }
+    async batchUpdateCategoryShippingSettings(dto, user) {
+        return this.shippingGstService.batchUpdateCategoryShippingSettings(dto, user?.sub);
+    }
+    async updateProductShippingSettings(id, dto, user) {
+        return this.shippingGstService.updateProductShippingSettings(id, dto, user?.sub);
     }
 };
 exports.ShippingGstController = ShippingGstController;
@@ -107,6 +116,35 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], ShippingGstController.prototype, "deleteZone", null);
+__decorate([
+    (0, common_1.Get)('products'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.RolesGuard),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.OPERATIONAL_MANAGER),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], ShippingGstController.prototype, "listProductShippingSettings", null);
+__decorate([
+    (0, common_1.Put)('products/batch'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.RolesGuard),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.OPERATIONAL_MANAGER),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, auth_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [shipping_gst_dto_1.BatchUpdateCategoryShippingSettingsDto, Object]),
+    __metadata("design:returntype", Promise)
+], ShippingGstController.prototype, "batchUpdateCategoryShippingSettings", null);
+__decorate([
+    (0, common_1.Put)('products/:id'),
+    (0, common_1.UseGuards)(auth_guard_1.JwtAuthGuard, auth_guard_1.RolesGuard),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.OPERATIONAL_MANAGER),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, auth_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, shipping_gst_dto_1.UpdateProductShippingSettingsDto, Object]),
+    __metadata("design:returntype", Promise)
+], ShippingGstController.prototype, "updateProductShippingSettings", null);
 exports.ShippingGstController = ShippingGstController = __decorate([
     (0, common_1.Controller)('shipping-gst'),
     __metadata("design:paramtypes", [shipping_gst_service_1.ShippingGstService])

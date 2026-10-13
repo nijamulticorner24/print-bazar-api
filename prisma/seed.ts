@@ -721,9 +721,9 @@ async function main() {
   // 10. Seed Default Kanban Production Columns
   const defaultColumns = [
     {
-      key: 'READY_FOR_PRODUCTION',
-      name: 'READY FOR PRODUCTION',
-      description: 'Artwork approved & operator assigned. Ready for press queue.',
+      key: 'QC_APPROVED',
+      name: 'QC APPROVED',
+      description: 'Pre-Production QC 100% Passed. Ready for machine queue.',
       type: 'SYSTEM' as const,
       mappedStatus: OrderStatus.PRODUCTION_QUEUE,
       mappedStation: 'PRINTING',

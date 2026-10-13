@@ -28,13 +28,13 @@ let ProductionBoardService = ProductionBoardService_1 = class ProductionBoardSer
     }
     async getBoardData(filters, user) {
         let columns = await this.prisma.productionColumn.findMany({
-            where: { isActive: true },
+            where: { isActive: true, key: { not: 'READY_FOR_PRODUCTION' } },
             orderBy: { sortOrder: 'asc' },
         });
         if (columns.length === 0) {
             await this.seedDefaultColumns();
             columns = await this.prisma.productionColumn.findMany({
-                where: { isActive: true },
+                where: { isActive: true, key: { not: 'READY_FOR_PRODUCTION' } },
                 orderBy: { sortOrder: 'asc' },
             });
         }

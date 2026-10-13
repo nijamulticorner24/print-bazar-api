@@ -496,7 +496,10 @@ class CreateProductDto {
     referenceImageRequirement;
     designServiceRequirement;
     designServicePrice;
+    shippingChargeType;
+    unitWeightGrams;
     courierCharge;
+    perAdditionalQtyRate;
     freeShippingThreshold;
     allowCod;
     codSurcharge;
@@ -653,11 +656,28 @@ __decorate([
     __metadata("design:type", Number)
 ], CreateProductDto.prototype, "designServicePrice", void 0);
 __decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateProductDto.prototype, "shippingChargeType", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateProductDto.prototype, "unitWeightGrams", void 0);
+__decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreateProductDto.prototype, "courierCharge", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateProductDto.prototype, "perAdditionalQtyRate", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),
@@ -719,7 +739,10 @@ class UpdateProductDto {
     referenceImageRequirement;
     designServiceRequirement;
     designServicePrice;
+    shippingChargeType;
+    unitWeightGrams;
     courierCharge;
+    perAdditionalQtyRate;
     freeShippingThreshold;
     allowCod;
     codSurcharge;
@@ -881,11 +904,28 @@ __decorate([
     __metadata("design:type", Number)
 ], UpdateProductDto.prototype, "designServicePrice", void 0);
 __decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateProductDto.prototype, "shippingChargeType", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateProductDto.prototype, "unitWeightGrams", void 0);
+__decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], UpdateProductDto.prototype, "courierCharge", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateProductDto.prototype, "perAdditionalQtyRate", void 0);
 __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_validator_1.Min)(0),

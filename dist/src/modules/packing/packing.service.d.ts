@@ -67,12 +67,12 @@ export declare class PackingService {
             type: string;
             isDefault: boolean;
             customerId: string;
-            postalCode: string;
             contactName: string;
             street: string;
             landmark: string | null;
             city: string;
             state: string;
+            postalCode: string;
             country: string;
         } | null;
         billingAddress: {
@@ -83,12 +83,12 @@ export declare class PackingService {
             type: string;
             isDefault: boolean;
             customerId: string;
-            postalCode: string;
             contactName: string;
             street: string;
             landmark: string | null;
             city: string;
             state: string;
+            postalCode: string;
             country: string;
         } | null;
         items: ({
@@ -273,12 +273,12 @@ export declare class PackingService {
             type: string;
             isDefault: boolean;
             customerId: string;
-            postalCode: string;
             contactName: string;
             street: string;
             landmark: string | null;
             city: string;
             state: string;
+            postalCode: string;
             country: string;
         } | null;
         billingAddress: {
@@ -289,12 +289,12 @@ export declare class PackingService {
             type: string;
             isDefault: boolean;
             customerId: string;
-            postalCode: string;
             contactName: string;
             street: string;
             landmark: string | null;
             city: string;
             state: string;
+            postalCode: string;
             country: string;
         } | null;
         items: ({
@@ -331,8 +331,12 @@ export declare class PackingService {
                 referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
                 designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
                 designServicePrice: Prisma.Decimal | null;
+                shippingChargeType: string;
+                unitWeightGrams: number | null;
                 courierCharge: Prisma.Decimal | null;
+                perAdditionalQtyRate: Prisma.Decimal | null;
                 freeShippingThreshold: Prisma.Decimal | null;
+                quantityCourierSlabs: Prisma.JsonValue | null;
                 allowCod: boolean;
                 codSurcharge: Prisma.Decimal | null;
             };

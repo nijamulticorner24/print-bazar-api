@@ -55,7 +55,7 @@ __decorate([
 ], QualityControlController.prototype, "getChecklistsForOrder", null);
 __decorate([
     (0, common_1.Get)('queue/final'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.FINAL_QC_INSPECTOR, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.FINAL_QC_INSPECTOR, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Get live queue of orders waiting for Final QC' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -63,7 +63,7 @@ __decorate([
 ], QualityControlController.prototype, "getFinalQCQueue", null);
 __decorate([
     (0, common_1.Post)('inspect'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.FINAL_QC_INSPECTOR, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.FINAL_QC_INSPECTOR, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Submit Final physical QC inspection checklist' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, auth_decorator_1.CurrentUser)()),

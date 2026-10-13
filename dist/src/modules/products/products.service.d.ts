@@ -98,8 +98,12 @@ export declare class ProductsService {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        shippingChargeType: string;
+        unitWeightGrams: number | null;
         courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        perAdditionalQtyRate: import("@prisma/client/runtime/library").Decimal | null;
         freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        quantityCourierSlabs: import("@prisma/client/runtime/library").JsonValue | null;
         allowCod: boolean;
         codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     })[]>;
@@ -208,8 +212,12 @@ export declare class ProductsService {
         referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
         designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        shippingChargeType: string;
+        unitWeightGrams: number | null;
         courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        perAdditionalQtyRate: import("@prisma/client/runtime/library").Decimal | null;
         freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        quantityCourierSlabs: import("@prisma/client/runtime/library").JsonValue | null;
         allowCod: boolean;
         codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     }>;

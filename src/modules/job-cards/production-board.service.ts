@@ -150,14 +150,14 @@ export class ProductionBoardService {
   async getBoardData(filters: BoardFiltersDto, user: JwtPayload) {
     // 1. Fetch or initialize active columns
     let columns = await this.prisma.productionColumn.findMany({
-      where: { isActive: true },
+      where: { isActive: true, key: { not: 'READY_FOR_PRODUCTION' } },
       orderBy: { sortOrder: 'asc' },
     });
 
     if (columns.length === 0) {
       await this.seedDefaultColumns();
       columns = await this.prisma.productionColumn.findMany({
-        where: { isActive: true },
+        where: { isActive: true, key: { not: 'READY_FOR_PRODUCTION' } },
         orderBy: { sortOrder: 'asc' },
       });
     }

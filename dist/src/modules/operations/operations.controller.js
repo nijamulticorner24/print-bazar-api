@@ -76,7 +76,7 @@ let OperationsController = class OperationsController {
 exports.OperationsController = OperationsController;
 __decorate([
     (0, common_1.Get)('dashboard'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Get OE dashboard aggregate metrics' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -84,7 +84,7 @@ __decorate([
 ], OperationsController.prototype, "getDashboard", null);
 __decorate([
     (0, common_1.Get)('orders'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'List all orders with operational filters and pagination' }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -93,7 +93,7 @@ __decorate([
 ], OperationsController.prototype, "listOrders", null);
 __decorate([
     (0, common_1.Get)('orders/intake'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'List incoming customer orders needing OE triage/assignment' }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -102,7 +102,7 @@ __decorate([
 ], OperationsController.prototype, "intakeOrders", null);
 __decorate([
     (0, common_1.Get)('orders/unassigned/design'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'List orders needing design with no assigned designer' }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -111,7 +111,7 @@ __decorate([
 ], OperationsController.prototype, "unassignedDesign", null);
 __decorate([
     (0, common_1.Get)('orders/unassigned/production'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'List orders in production queue with no assigned operator' }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -120,7 +120,7 @@ __decorate([
 ], OperationsController.prototype, "unassignedProduction", null);
 __decorate([
     (0, common_1.Get)('orders/blocked'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'List orders blocked by payment, QC, hold, or other issues' }),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -129,7 +129,7 @@ __decorate([
 ], OperationsController.prototype, "blockedOrders", null);
 __decorate([
     (0, common_1.Get)('orders/:id'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Get full operational detail for a single order' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -138,7 +138,7 @@ __decorate([
 ], OperationsController.prototype, "getOrderDetail", null);
 __decorate([
     (0, common_1.Get)('orders/:id/timeline'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Get order timeline: status history, audit, assignments, notes' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -147,7 +147,7 @@ __decorate([
 ], OperationsController.prototype, "getTimeline", null);
 __decorate([
     (0, common_1.Post)('orders/:id/design-assignment'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Assign or reassign a designer to an order' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -158,7 +158,7 @@ __decorate([
 ], OperationsController.prototype, "assignDesigner", null);
 __decorate([
     (0, common_1.Post)('orders/:id/production-assignment'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Assign or reassign a production operator to an order' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -169,7 +169,7 @@ __decorate([
 ], OperationsController.prototype, "assignProductionOperator", null);
 __decorate([
     (0, common_1.Post)('orders/:id/notes'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Add internal operational note to an order' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -180,7 +180,7 @@ __decorate([
 ], OperationsController.prototype, "addNote", null);
 __decorate([
     (0, common_1.Patch)('orders/:id/priority'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Update order priority with audited reason' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -191,7 +191,7 @@ __decorate([
 ], OperationsController.prototype, "updatePriority", null);
 __decorate([
     (0, common_1.Get)('assignees/designers'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'List eligible designers for assignment with workload info' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -199,7 +199,7 @@ __decorate([
 ], OperationsController.prototype, "getDesigners", null);
 __decorate([
     (0, common_1.Get)('assignees/operators'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'List eligible production operators for assignment with workload info' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -207,7 +207,7 @@ __decorate([
 ], OperationsController.prototype, "getOperators", null);
 __decorate([
     (0, common_1.Get)('orders/:id/readiness'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Get order production readiness report with automated size validation' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
@@ -216,7 +216,7 @@ __decorate([
 ], OperationsController.prototype, "getOrderReadiness", null);
 __decorate([
     (0, common_1.Post)('orders/:id/release-to-production'),
-    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER),
+    (0, auth_decorator_1.Roles)(roles_1.UserRole.OPERATIONAL_MANAGER, roles_1.UserRole.ADMIN_MANAGER, roles_1.UserRole.PRODUCTION_OPERATOR),
     (0, swagger_1.ApiOperation)({ summary: 'Release order to production queue with automated size check and Job Card creation' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),

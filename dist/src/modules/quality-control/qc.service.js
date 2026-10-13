@@ -185,19 +185,44 @@ let QualityControlService = QualityControlService_1 = class QualityControlServic
     }
     async getFinalQCQueue(search) {
         const where = {
-            status: {
-                in: [
-                    client_1.OrderStatus.QUALITY_CHECK,
-                    client_1.OrderStatus.PACKING,
-                    client_1.OrderStatus.READY_FOR_DISPATCH,
-                    client_1.OrderStatus.ON_HOLD,
-                ],
-            },
+            OR: [
+                {
+                    status: {
+                        in: [
+                            client_1.OrderStatus.QUALITY_CHECK,
+                            client_1.OrderStatus.PACKING,
+                            client_1.OrderStatus.READY_FOR_DISPATCH,
+                            client_1.OrderStatus.OUT_FOR_DELIVERY,
+                            client_1.OrderStatus.DELIVERED,
+                            client_1.OrderStatus.ON_HOLD,
+                        ],
+                    },
+                },
+                {
+                    qcChecklists: {
+                        some: {
+                            type: 'FINAL_QC',
+                            outcome: 'PASS',
+                        },
+                    },
+                },
+                {
+                    jobCards: {
+                        some: {
+                            currentStation: 'PACKING',
+                        },
+                    },
+                },
+            ],
             ...(search
                 ? {
-                    OR: [
-                        { orderNumber: { contains: search, mode: 'insensitive' } },
-                        { customer: { fullName: { contains: search, mode: 'insensitive' } } },
+                    AND: [
+                        {
+                            OR: [
+                                { orderNumber: { contains: search, mode: 'insensitive' } },
+                                { customer: { fullName: { contains: search, mode: 'insensitive' } } },
+                            ],
+                        },
                     ],
                 }
                 : {}),

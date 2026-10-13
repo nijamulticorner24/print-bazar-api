@@ -464,8 +464,10 @@ let OperationsService = OperationsService_1 = class OperationsService {
         };
     }
     async assignDesigner(orderId, dto, user) {
-        if (user.role !== client_1.UserRole.OPERATIONAL_MANAGER && user.role !== client_1.UserRole.ADMIN_MANAGER) {
-            throw new common_1.ForbiddenException('Only Operational Managers can assign designers');
+        if (user.role !== client_1.UserRole.OPERATIONAL_MANAGER &&
+            user.role !== client_1.UserRole.ADMIN_MANAGER &&
+            user.role !== client_1.UserRole.PRODUCTION_OPERATOR) {
+            throw new common_1.ForbiddenException('Only Operational Managers, Administrators, or Production Operators can assign designers');
         }
         const resolvedOrderId = await this.resolveOrderId(orderId);
         const order = await this.prisma.order.findUnique({
@@ -596,8 +598,10 @@ let OperationsService = OperationsService_1 = class OperationsService {
         return newAssignment;
     }
     async assignProductionOperator(orderId, dto, user) {
-        if (user.role !== client_1.UserRole.OPERATIONAL_MANAGER && user.role !== client_1.UserRole.ADMIN_MANAGER) {
-            throw new common_1.ForbiddenException('Only Operational Managers can assign production operators');
+        if (user.role !== client_1.UserRole.OPERATIONAL_MANAGER &&
+            user.role !== client_1.UserRole.ADMIN_MANAGER &&
+            user.role !== client_1.UserRole.PRODUCTION_OPERATOR) {
+            throw new common_1.ForbiddenException('Only Operational Managers, Administrators, or Production Operators can assign production operators');
         }
         const resolvedOrderId = await this.resolveOrderId(orderId);
         const order = await this.prisma.order.findUnique({
@@ -820,8 +824,10 @@ let OperationsService = OperationsService_1 = class OperationsService {
         return note;
     }
     async updateOrderPriority(orderId, dto, user) {
-        if (user.role !== client_1.UserRole.OPERATIONAL_MANAGER && user.role !== client_1.UserRole.ADMIN_MANAGER) {
-            throw new common_1.ForbiddenException('Only Operational Managers can update order priority');
+        if (user.role !== client_1.UserRole.OPERATIONAL_MANAGER &&
+            user.role !== client_1.UserRole.ADMIN_MANAGER &&
+            user.role !== client_1.UserRole.PRODUCTION_OPERATOR) {
+            throw new common_1.ForbiddenException('Only Operational Managers, Administrators, or Production Operators can update order priority');
         }
         if (!dto.reason || dto.reason.trim().length < 5) {
             throw new common_1.BadRequestException('Priority change reason must be at least 5 characters');
@@ -1256,8 +1262,10 @@ let OperationsService = OperationsService_1 = class OperationsService {
         };
     }
     async releaseToProduction(orderId, dto, user) {
-        if (user.role !== client_1.UserRole.OPERATIONAL_MANAGER && user.role !== client_1.UserRole.ADMIN_MANAGER) {
-            throw new common_1.ForbiddenException('Only Operational Managers and Administrators can release orders to production.');
+        if (user.role !== client_1.UserRole.OPERATIONAL_MANAGER &&
+            user.role !== client_1.UserRole.ADMIN_MANAGER &&
+            user.role !== client_1.UserRole.PRODUCTION_OPERATOR) {
+            throw new common_1.ForbiddenException('Only Operational Managers, Administrators, or Production Operators can release orders to production.');
         }
         const resolvedOrderId = await this.resolveOrderId(orderId);
         const order = await this.prisma.order.findUnique({

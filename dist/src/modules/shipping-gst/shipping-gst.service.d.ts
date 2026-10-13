@@ -1,12 +1,18 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { UpdateShippingGstSettingsDto, CreateShippingZoneDto, UpdateShippingZoneDto } from './dto/shipping-gst.dto';
+import { UpdateShippingGstSettingsDto, CreateShippingZoneDto, UpdateShippingZoneDto, ShippingCalculationItemDto } from './dto/shipping-gst.dto';
 export interface ShippingGstSettingsRecord {
     id: string;
     baseShippingFee: number;
     gstRate: number;
     freeShippingThreshold: number;
     isFreeShippingEnabled: boolean;
+    enableWeightCharges: boolean;
+    baseWeightKg: number;
+    weightRatePerKg: number;
+    enableQuantityCharges: boolean;
+    quantityStep: number;
+    quantitySurchargePerStep: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -23,6 +29,12 @@ export interface ShippingTaxCalculationResult {
     subtotal: number;
     shippingFee: number;
     baseShippingFee: number;
+    locationCharge: number;
+    weightCharge: number;
+    quantityCharge: number;
+    totalWeightKg: number;
+    totalQuantity: number;
+    calculationBasis: string;
     isFreeShippingApplied: boolean;
     freeShippingThreshold: number;
     isFreeShippingEnabled: boolean;
@@ -55,5 +67,27 @@ export declare class ShippingGstService {
         success: boolean;
         message: string;
     }>;
-    calculateShippingAndTax(subtotal: number, postalCode?: string, deliveryMethod?: 'COURIER' | 'STORE_PICKUP', isInterState?: boolean): Promise<ShippingTaxCalculationResult>;
+    listProductShippingSettings(): Promise<any[]>;
+    updateProductShippingSettings(productId: string, dto: {
+        shippingChargeType?: string;
+        unitWeightGrams?: number;
+        courierCharge?: number;
+        perAdditionalQtyRate?: number;
+        freeShippingThreshold?: number;
+        quantityCourierSlabs?: any[];
+    }, actorId?: string): Promise<any>;
+    batchUpdateCategoryShippingSettings(dto: {
+        categoryId?: string;
+        productIds?: string[];
+        shippingChargeType?: string;
+        unitWeightGrams?: number;
+        courierCharge?: number;
+        perAdditionalQtyRate?: number;
+        freeShippingThreshold?: number;
+        quantityCourierSlabs?: any[];
+    }, actorId?: string): Promise<{
+        updatedCount: number;
+        message: string;
+    }>;
+    calculateShippingAndTax(subtotal: number, postalCode?: string, deliveryMethod?: 'COURIER' | 'STORE_PICKUP', isInterState?: boolean, items?: ShippingCalculationItemDto[], totalQuantityOverride?: number, totalWeightKgOverride?: number): Promise<ShippingTaxCalculationResult>;
 }

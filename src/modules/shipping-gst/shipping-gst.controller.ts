@@ -14,6 +14,8 @@ import {
   CreateShippingZoneDto,
   UpdateShippingZoneDto,
   CalculateShippingAndTaxDto,
+  UpdateProductShippingSettingsDto,
+  BatchUpdateCategoryShippingSettingsDto,
 } from './dto/shipping-gst.dto';
 import { JwtAuthGuard, RolesGuard } from '../../common/guards/auth.guard';
 import { Roles, CurrentUser } from '../../common/decorators/auth.decorator';
@@ -33,6 +35,9 @@ export class ShippingGstController {
       dto.postalCode,
       dto.deliveryMethod || 'COURIER',
       dto.isInterState || false,
+      dto.items,
+      dto.totalQuantity,
+      dto.totalWeightKg,
     );
   }
 
@@ -103,5 +108,42 @@ export class ShippingGstController {
     @CurrentUser() user?: JwtPayload,
   ) {
     return this.shippingGstService.deleteZone(id, user?.sub);
+  }
+
+  /**
+   * List product-level shipping settings alongside product configuration
+   */
+  @Get('products')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN_MANAGER, UserRole.OPERATIONAL_MANAGER)
+  async listProductShippingSettings() {
+    return this.shippingGstService.listProductShippingSettings();
+  }
+
+  /**
+   * Bulk update courier settings across multiple products or an entire category
+   */
+  @Put('products/batch')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN_MANAGER, UserRole.OPERATIONAL_MANAGER)
+  async batchUpdateCategoryShippingSettings(
+    @Body() dto: BatchUpdateCategoryShippingSettingsDto,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    return this.shippingGstService.batchUpdateCategoryShippingSettings(dto, user?.sub);
+  }
+
+  /**
+   * Update a specific product's courier settings
+   */
+  @Put('products/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN_MANAGER, UserRole.OPERATIONAL_MANAGER)
+  async updateProductShippingSettings(
+    @Param('id') id: string,
+    @Body() dto: UpdateProductShippingSettingsDto,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    return this.shippingGstService.updateProductShippingSettings(id, dto, user?.sub);
   }
 }

@@ -376,9 +376,13 @@ model Product {
   designServiceRequirement   ProductOptionRequirement @default(DISABLED)
   designServicePrice         Decimal?                 @default(0.00) @db.Decimal(12, 2)
 
-  // Courier & COD Charges Configuration (Tab 5: Pricing Rules & Offers)
+  // Courier & Delivery Charges Configuration (Alongside Product Configuration)
+  shippingChargeType         String                   @default("DEFAULT") // DEFAULT, FIXED, FREE, QUANTITY_BASED, WEIGHT_BASED
+  unitWeightGrams            Float?                   @default(0)
   courierCharge              Decimal?                 @default(100.00) @db.Decimal(12, 2)
+  perAdditionalQtyRate       Decimal?                 @default(0.00) @db.Decimal(12, 2)
   freeShippingThreshold      Decimal?                 @default(1000.00) @db.Decimal(12, 2)
+  quantityCourierSlabs       Json?
   allowCod                   Boolean                  @default(true)
   codSurcharge               Decimal?                 @default(50.00) @db.Decimal(12, 2)
 
@@ -834,6 +838,7 @@ model Invoice {
   order         Order    @relation(fields: [orderId], references: [id])
   customerGstin String?
   subtotal      Decimal  @db.Decimal(12, 2)
+  shippingAmount Decimal @default(0.0) @db.Decimal(12, 2)
   cgst          Decimal  @db.Decimal(12, 2)
   sgst          Decimal  @db.Decimal(12, 2)
   igst          Decimal  @db.Decimal(12, 2)
@@ -986,6 +991,17 @@ model ShippingGstSetting {
   gstRate               Decimal  @default(18.00) @db.Decimal(5, 2)
   freeShippingThreshold Decimal  @default(2000.00) @db.Decimal(12, 2)
   isFreeShippingEnabled Boolean  @default(true)
+
+  // Weight-wise courier settings
+  enableWeightCharges   Boolean  @default(true)
+  baseWeightKg          Decimal  @default(1.00) @db.Decimal(8, 2)
+  weightRatePerKg       Decimal  @default(50.00) @db.Decimal(12, 2)
+
+  // Quantity-wise courier settings
+  enableQuantityCharges Boolean  @default(true)
+  quantityStep          Int      @default(500)
+  quantitySurchargePerStep Decimal @default(30.00) @db.Decimal(12, 2)
+
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }

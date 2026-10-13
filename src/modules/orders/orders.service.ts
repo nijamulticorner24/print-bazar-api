@@ -605,6 +605,7 @@ export class OrdersService {
           invoiceNumber: `INV-${orderNumber}`,
           customerGstin: dto.customerDetails?.gstin || null,
           subtotal,
+          shippingAmount: Number(shippingAmount || 0),
           cgst: Math.round((totalTax / 2) * 100) / 100,
           sgst: Math.round((totalTax / 2) * 100) / 100,
           igst: 0,

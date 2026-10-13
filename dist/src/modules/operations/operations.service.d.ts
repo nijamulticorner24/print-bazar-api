@@ -330,12 +330,12 @@ export declare class OperationsService {
                 type: string;
                 isDefault: boolean;
                 customerId: string;
-                postalCode: string;
                 contactName: string;
                 street: string;
                 landmark: string | null;
                 city: string;
                 state: string;
+                postalCode: string;
                 country: string;
             }[];
         } & {
@@ -357,12 +357,12 @@ export declare class OperationsService {
             type: string;
             isDefault: boolean;
             customerId: string;
-            postalCode: string;
             contactName: string;
             street: string;
             landmark: string | null;
             city: string;
             state: string;
+            postalCode: string;
             country: string;
         } | null;
         billingAddress: {
@@ -373,12 +373,12 @@ export declare class OperationsService {
             type: string;
             isDefault: boolean;
             customerId: string;
-            postalCode: string;
             contactName: string;
             street: string;
             landmark: string | null;
             city: string;
             state: string;
+            postalCode: string;
             country: string;
         } | null;
         items: ({

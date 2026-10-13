@@ -674,9 +674,13 @@ export class OperationsService {
   // ═══════════════════════════════════════════════════════════════════════
 
   async assignDesigner(orderId: string, dto: AssignDesignerDto, user: JwtPayload) {
-    // 1. Validate requester is OPERATIONAL_MANAGER or ADMIN
-    if (user.role !== UserRole.OPERATIONAL_MANAGER && user.role !== UserRole.ADMIN_MANAGER) {
-      throw new ForbiddenException('Only Operational Managers can assign designers');
+    // 1. Validate requester
+    if (
+      user.role !== UserRole.OPERATIONAL_MANAGER &&
+      user.role !== UserRole.ADMIN_MANAGER &&
+      user.role !== UserRole.PRODUCTION_OPERATOR
+    ) {
+      throw new ForbiddenException('Only Operational Managers, Administrators, or Production Operators can assign designers');
     }
 
     const resolvedOrderId = await this.resolveOrderId(orderId);
@@ -843,8 +847,12 @@ export class OperationsService {
 
   async assignProductionOperator(orderId: string, dto: AssignProductionOperatorDto, user: JwtPayload) {
     // 1. Validate requester
-    if (user.role !== UserRole.OPERATIONAL_MANAGER && user.role !== UserRole.ADMIN_MANAGER) {
-      throw new ForbiddenException('Only Operational Managers can assign production operators');
+    if (
+      user.role !== UserRole.OPERATIONAL_MANAGER &&
+      user.role !== UserRole.ADMIN_MANAGER &&
+      user.role !== UserRole.PRODUCTION_OPERATOR
+    ) {
+      throw new ForbiddenException('Only Operational Managers, Administrators, or Production Operators can assign production operators');
     }
 
     const resolvedOrderId = await this.resolveOrderId(orderId);
@@ -1122,8 +1130,12 @@ export class OperationsService {
   // ═══════════════════════════════════════════════════════════════════════
 
   async updateOrderPriority(orderId: string, dto: UpdatePriorityDto, user: JwtPayload) {
-    if (user.role !== UserRole.OPERATIONAL_MANAGER && user.role !== UserRole.ADMIN_MANAGER) {
-      throw new ForbiddenException('Only Operational Managers can update order priority');
+    if (
+      user.role !== UserRole.OPERATIONAL_MANAGER &&
+      user.role !== UserRole.ADMIN_MANAGER &&
+      user.role !== UserRole.PRODUCTION_OPERATOR
+    ) {
+      throw new ForbiddenException('Only Operational Managers, Administrators, or Production Operators can update order priority');
     }
 
     if (!dto.reason || dto.reason.trim().length < 5) {
@@ -1699,9 +1711,13 @@ export class OperationsService {
   // ═══════════════════════════════════════════════════════════════════════
 
   async releaseToProduction(orderId: string, dto: ReleaseToProductionDto, user: JwtPayload) {
-    // 1. RBAC Check: OPERATIONAL_MANAGER or ADMIN_MANAGER only
-    if (user.role !== UserRole.OPERATIONAL_MANAGER && user.role !== UserRole.ADMIN_MANAGER) {
-      throw new ForbiddenException('Only Operational Managers and Administrators can release orders to production.');
+    // 1. RBAC Check: OPERATIONAL_MANAGER, ADMIN_MANAGER, or PRODUCTION_OPERATOR
+    if (
+      user.role !== UserRole.OPERATIONAL_MANAGER &&
+      user.role !== UserRole.ADMIN_MANAGER &&
+      user.role !== UserRole.PRODUCTION_OPERATOR
+    ) {
+      throw new ForbiddenException('Only Operational Managers, Administrators, or Production Operators can release orders to production.');
     }
 
     const resolvedOrderId = await this.resolveOrderId(orderId);

@@ -156,7 +156,10 @@ export declare class CreateProductDto {
     referenceImageRequirement?: ProductOptionRequirementDto;
     designServiceRequirement?: ProductOptionRequirementDto;
     designServicePrice?: number;
+    shippingChargeType?: string;
+    unitWeightGrams?: number;
     courierCharge?: number;
+    perAdditionalQtyRate?: number;
     freeShippingThreshold?: number;
     allowCod?: boolean;
     codSurcharge?: number;
@@ -193,7 +196,10 @@ export declare class UpdateProductDto {
     referenceImageRequirement?: ProductOptionRequirementDto;
     designServiceRequirement?: ProductOptionRequirementDto;
     designServicePrice?: number;
+    shippingChargeType?: string;
+    unitWeightGrams?: number;
     courierCharge?: number;
+    perAdditionalQtyRate?: number;
     freeShippingThreshold?: number;
     allowCod?: boolean;
     codSurcharge?: number;
@@ -262,6 +268,7 @@ export declare class CreateReusableAttributeDto {
         imageUrl?: string;
         fileCount?: number;
         fileSlotLabels?: string[];
+        minMegapixels?: number;
         sortOrder?: number;
         isOptionalAddOn?: boolean;
     }>;
@@ -284,6 +291,7 @@ export declare class UpdateReusableAttributeDto {
         imageUrl?: string;
         fileCount?: number;
         fileSlotLabels?: string[];
+        minMegapixels?: number;
         sortOrder?: number;
         isOptionalAddOn?: boolean;
     }>;

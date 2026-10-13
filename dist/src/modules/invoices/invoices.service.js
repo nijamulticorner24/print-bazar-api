@@ -18,7 +18,7 @@ let InvoicesService = class InvoicesService {
         this.prisma = prisma;
     }
     async getInvoiceByNumber(invoiceNumber) {
-        const invoice = await this.prisma.invoice.findUnique({
+        let invoice = await this.prisma.invoice.findUnique({
             where: { invoiceNumber },
             include: {
                 order: {
@@ -31,6 +31,26 @@ let InvoicesService = class InvoicesService {
                 },
             },
         });
+        if (!invoice) {
+            invoice = await this.prisma.invoice.findFirst({
+                where: {
+                    OR: [
+                        { invoiceNumber: `INV-${invoiceNumber}` },
+                        { order: { orderNumber: invoiceNumber } },
+                    ],
+                },
+                include: {
+                    order: {
+                        include: {
+                            customer: true,
+                            shippingAddress: true,
+                            billingAddress: true,
+                            items: true,
+                        },
+                    },
+                },
+            });
+        }
         if (!invoice)
             throw new common_1.NotFoundException(`Invoice '${invoiceNumber}' not found`);
         return invoice;

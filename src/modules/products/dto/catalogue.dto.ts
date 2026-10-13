@@ -477,11 +477,25 @@ export class CreateProductDto {
   @IsOptional()
   designServicePrice?: number;
 
-  // Courier & COD Charges Configuration (Tab 5: Pricing Rules & Offers)
+  // Courier & Delivery Charges Configuration (Alongside Product Configuration)
+  @IsString()
+  @IsOptional()
+  shippingChargeType?: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  unitWeightGrams?: number;
+
   @IsNumber()
   @Min(0)
   @IsOptional()
   courierCharge?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  perAdditionalQtyRate?: number;
 
   @IsNumber()
   @Min(0)
@@ -637,11 +651,25 @@ export class UpdateProductDto {
   @IsOptional()
   designServicePrice?: number;
 
-  // Courier & COD Charges Configuration (Tab 5: Pricing Rules & Offers)
+  // Courier & Delivery Charges Configuration (Alongside Product Configuration)
+  @IsString()
+  @IsOptional()
+  shippingChargeType?: string;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  unitWeightGrams?: number;
+
   @IsNumber()
   @Min(0)
   @IsOptional()
   courierCharge?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  perAdditionalQtyRate?: number;
 
   @IsNumber()
   @Min(0)
@@ -863,6 +891,7 @@ export class CreateReusableAttributeDto {
     imageUrl?: string;
     fileCount?: number;
     fileSlotLabels?: string[];
+    minMegapixels?: number;
     sortOrder?: number;
     isOptionalAddOn?: boolean;
   }>;
@@ -909,6 +938,7 @@ export class UpdateReusableAttributeDto {
     imageUrl?: string;
     fileCount?: number;
     fileSlotLabels?: string[];
+    minMegapixels?: number;
     sortOrder?: number;
     isOptionalAddOn?: boolean;
   }>;

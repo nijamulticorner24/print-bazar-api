@@ -23,12 +23,12 @@ export declare class InvoicesController {
                 type: string;
                 isDefault: boolean;
                 customerId: string;
-                postalCode: string;
                 contactName: string;
                 street: string;
                 landmark: string | null;
                 city: string;
                 state: string;
+                postalCode: string;
                 country: string;
             } | null;
             billingAddress: {
@@ -39,12 +39,12 @@ export declare class InvoicesController {
                 type: string;
                 isDefault: boolean;
                 customerId: string;
-                postalCode: string;
                 contactName: string;
                 street: string;
                 landmark: string | null;
                 city: string;
                 state: string;
+                postalCode: string;
                 country: string;
             } | null;
             items: {
@@ -91,6 +91,7 @@ export declare class InvoicesController {
     } & {
         id: string;
         subtotal: import("@prisma/client/runtime/library").Decimal;
+        shippingAmount: import("@prisma/client/runtime/library").Decimal;
         orderId: string;
         cgst: import("@prisma/client/runtime/library").Decimal;
         sgst: import("@prisma/client/runtime/library").Decimal;
@@ -105,6 +106,7 @@ export declare class InvoicesController {
     getInvoicesForOrder(orderId: string): Promise<{
         id: string;
         subtotal: import("@prisma/client/runtime/library").Decimal;
+        shippingAmount: import("@prisma/client/runtime/library").Decimal;
         orderId: string;
         cgst: import("@prisma/client/runtime/library").Decimal;
         sgst: import("@prisma/client/runtime/library").Decimal;

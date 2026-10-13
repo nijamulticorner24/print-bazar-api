@@ -233,19 +233,44 @@ export class QualityControlService {
    */
   async getFinalQCQueue(search?: string) {
     const where: Prisma.OrderWhereInput = {
-      status: {
-        in: [
-          OrderStatus.QUALITY_CHECK,
-          OrderStatus.PACKING,
-          OrderStatus.READY_FOR_DISPATCH,
-          OrderStatus.ON_HOLD,
-        ],
-      },
+      OR: [
+        {
+          status: {
+            in: [
+              OrderStatus.QUALITY_CHECK,
+              OrderStatus.PACKING,
+              OrderStatus.READY_FOR_DISPATCH,
+              OrderStatus.OUT_FOR_DELIVERY,
+              OrderStatus.DELIVERED,
+              OrderStatus.ON_HOLD,
+            ],
+          },
+        },
+        {
+          qcChecklists: {
+            some: {
+              type: 'FINAL_QC',
+              outcome: 'PASS',
+            },
+          },
+        },
+        {
+          jobCards: {
+            some: {
+              currentStation: 'PACKING',
+            },
+          },
+        },
+      ],
       ...(search
         ? {
-            OR: [
-              { orderNumber: { contains: search, mode: 'insensitive' } },
-              { customer: { fullName: { contains: search, mode: 'insensitive' } } },
+            AND: [
+              {
+                OR: [
+                  { orderNumber: { contains: search, mode: 'insensitive' } },
+                  { customer: { fullName: { contains: search, mode: 'insensitive' } } },
+                ],
+              },
             ],
           }
         : {}),
