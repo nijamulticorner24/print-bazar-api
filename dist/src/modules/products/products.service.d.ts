@@ -103,7 +103,7 @@ export declare class ProductsService {
         allowCod: boolean;
         codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
     })[]>;
-    getProductBySlug(slug: string): Promise<{
+    getProductBySlug(slugOrId: string): Promise<{
         category: {
             parent: {
                 id: string;

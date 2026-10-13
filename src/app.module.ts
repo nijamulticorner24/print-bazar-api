@@ -19,6 +19,7 @@ import { SlaModule } from './modules/sla/sla.module';
 import { NotificationModule } from './modules/notifications/notification.module';
 import { OperationsModule } from './modules/operations/operations.module';
 import { EventsModule } from './modules/events/events.module';
+import { ShippingGstModule } from './modules/shipping-gst/shipping-gst.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { EventsModule } from './modules/events/events.module';
     SlaModule,
     NotificationModule,
     OperationsModule,
+    ShippingGstModule,
   ],
 })
 export class AppModule {}

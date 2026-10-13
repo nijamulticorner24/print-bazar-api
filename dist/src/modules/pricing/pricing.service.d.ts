@@ -1,4 +1,5 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { ShippingGstService } from '../shipping-gst/shipping-gst.service';
 export interface OptionSelectionDto {
     optionCode: string;
     valueCode: string;
@@ -41,6 +42,14 @@ export interface QuoteItemBreakdown {
     courierCharge: number;
     freeShippingThreshold: number;
     estimatedShipping: number;
+    matchedZone?: {
+        id: string;
+        zoneName: string;
+        pincodePrefix: string;
+        shippingCharge: number;
+    } | null;
+    isFreeShippingApplied?: boolean;
+    gstRatePercent?: number;
     allowCod: boolean;
     codSurcharge: number;
     codCharge: number;
@@ -75,6 +84,7 @@ export interface QuoteItemBreakdown {
 }
 export declare class PricingService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly shippingGstService;
+    constructor(prisma: PrismaService, shippingGstService: ShippingGstService);
     calculateQuote(dto: QuoteCalculationRequestDto): Promise<QuoteItemBreakdown>;
 }

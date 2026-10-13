@@ -723,6 +723,7 @@ class UpdateProductDto {
     freeShippingThreshold;
     allowCod;
     codSurcharge;
+    fields;
 }
 exports.UpdateProductDto = UpdateProductDto;
 __decorate([
@@ -902,6 +903,13 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], UpdateProductDto.prototype, "codSurcharge", void 0);
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => CreateProductFieldDto),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], UpdateProductDto.prototype, "fields", void 0);
 class CreateInventoryItemDto {
     name;
     sku;
@@ -1146,6 +1154,7 @@ class CreateReusableAttributeDto {
     options;
     sortOrder;
     isActive;
+    isOptionalAddOn;
 }
 exports.CreateReusableAttributeDto = CreateReusableAttributeDto;
 __decorate([
@@ -1183,6 +1192,11 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
 ], CreateReusableAttributeDto.prototype, "isActive", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateReusableAttributeDto.prototype, "isOptionalAddOn", void 0);
 class UpdateReusableAttributeDto {
     name;
     code;
@@ -1191,6 +1205,7 @@ class UpdateReusableAttributeDto {
     options;
     sortOrder;
     isActive;
+    isOptionalAddOn;
 }
 exports.UpdateReusableAttributeDto = UpdateReusableAttributeDto;
 __decorate([
@@ -1228,4 +1243,9 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
 ], UpdateReusableAttributeDto.prototype, "isActive", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], UpdateReusableAttributeDto.prototype, "isOptionalAddOn", void 0);
 //# sourceMappingURL=catalogue.dto.js.map

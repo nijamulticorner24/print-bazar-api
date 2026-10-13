@@ -63,10 +63,13 @@ let ProductsService = class ProductsService {
             orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
         });
     }
-    async getProductBySlug(slug) {
+    async getProductBySlug(slugOrId) {
         const product = await this.prisma.product.findFirst({
             where: {
-                slug,
+                OR: [
+                    { slug: slugOrId },
+                    { id: slugOrId },
+                ],
                 status: 'PUBLISHED',
                 isActive: true,
             },
@@ -95,7 +98,32 @@ let ProductsService = class ProductsService {
             },
         });
         if (!product) {
-            throw new common_1.NotFoundException(`Product with slug '${slug}' not found or is currently unavailable`);
+            throw new common_1.NotFoundException(`Product with slug or ID '${slugOrId}' not found or is currently unavailable`);
+        }
+        if (product.fields && product.fields.length > 0) {
+            const reusableAttrs = await this.prisma.reusableAttribute.findMany({
+                where: { isActive: true },
+            });
+            const attrMap = new Map(reusableAttrs.map((a) => [a.code, a]));
+            for (const field of product.fields) {
+                const reusable = attrMap.get(field.key);
+                const reusableOptions = reusable?.options || [];
+                const optMetaMap = new Map(reusableOptions.map((o) => [o.value, o]));
+                const fieldValRules = field.validationRules || {};
+                const savedOptionConfigs = fieldValRules.optionConfigs || {};
+                for (const opt of field.options) {
+                    const meta = optMetaMap.get(opt.value) || savedOptionConfigs[opt.value] || {};
+                    if (meta.fileCount !== undefined) {
+                        opt.fileCount = Number(meta.fileCount);
+                    }
+                    if (meta.fileSlotLabels !== undefined) {
+                        opt.fileSlotLabels = meta.fileSlotLabels;
+                    }
+                    if (meta.imageUrl !== undefined) {
+                        opt.imageUrl = meta.imageUrl;
+                    }
+                }
+            }
         }
         return product;
     }

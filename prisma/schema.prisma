@@ -980,4 +980,28 @@ model OperationalNote {
   @@index([createdAt])
 }
 
+model ShippingGstSetting {
+  id                    String   @id @default("default")
+  baseShippingFee       Decimal  @default(150.00) @db.Decimal(12, 2)
+  gstRate               Decimal  @default(18.00) @db.Decimal(5, 2)
+  freeShippingThreshold Decimal  @default(2000.00) @db.Decimal(12, 2)
+  isFreeShippingEnabled Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model ShippingZone {
+  id             String   @id @default(uuid())
+  zoneName       String
+  pincodePrefix  String   @unique
+  shippingCharge Decimal  @db.Decimal(12, 2)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([pincodePrefix])
+  @@index([isActive])
+}
+
+
 

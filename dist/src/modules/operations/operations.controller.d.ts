@@ -663,12 +663,12 @@ export declare class OperationsController {
                 type: string;
                 isDefault: boolean;
                 customerId: string;
+                postalCode: string;
                 contactName: string;
                 street: string;
                 landmark: string | null;
                 city: string;
                 state: string;
-                postalCode: string;
                 country: string;
             }[];
         } & {
@@ -690,12 +690,12 @@ export declare class OperationsController {
             type: string;
             isDefault: boolean;
             customerId: string;
+            postalCode: string;
             contactName: string;
             street: string;
             landmark: string | null;
             city: string;
             state: string;
-            postalCode: string;
             country: string;
         } | null;
         billingAddress: {
@@ -706,12 +706,12 @@ export declare class OperationsController {
             type: string;
             isDefault: boolean;
             customerId: string;
+            postalCode: string;
             contactName: string;
             street: string;
             landmark: string | null;
             city: string;
             state: string;
-            postalCode: string;
             country: string;
         } | null;
         items: ({
@@ -732,9 +732,9 @@ export declare class OperationsController {
                     createdAt: Date;
                     description: string;
                     jobCardId: string;
+                    isResolved: boolean;
                     reasonCode: string;
                     reportedBy: string;
-                    isResolved: boolean;
                     resolvedBy: string | null;
                     resolvedAt: Date | null;
                 }[];

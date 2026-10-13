@@ -54,10 +54,13 @@ export class ProductsService {
     });
   }
 
-  async getProductBySlug(slug: string) {
+  async getProductBySlug(slugOrId: string) {
     const product = await this.prisma.product.findFirst({
       where: {
-        slug,
+        OR: [
+          { slug: slugOrId },
+          { id: slugOrId },
+        ],
         status: 'PUBLISHED',
         isActive: true,
       },
@@ -87,7 +90,37 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Product with slug '${slug}' not found or is currently unavailable`);
+      throw new NotFoundException(`Product with slug or ID '${slugOrId}' not found or is currently unavailable`);
+    }
+
+    // Enrich fields/options with ReusableAttribute metadata (such as fileCount, fileSlotLabels, imageUrl)
+    if (product.fields && product.fields.length > 0) {
+      const reusableAttrs = await (this.prisma as any).reusableAttribute.findMany({
+        where: { isActive: true },
+      });
+      const attrMap = new Map<string, any>(reusableAttrs.map((a: any) => [a.code, a]));
+
+      for (const field of product.fields) {
+        const reusable = attrMap.get(field.key);
+        const reusableOptions = (reusable?.options as any[]) || [];
+        const optMetaMap = new Map<string, any>(reusableOptions.map((o: any) => [o.value, o]));
+
+        const fieldValRules = (field.validationRules as any) || {};
+        const savedOptionConfigs = fieldValRules.optionConfigs || {};
+
+        for (const opt of field.options) {
+          const meta = optMetaMap.get(opt.value) || savedOptionConfigs[opt.value] || {};
+          if (meta.fileCount !== undefined) {
+            (opt as any).fileCount = Number(meta.fileCount);
+          }
+          if (meta.fileSlotLabels !== undefined) {
+            (opt as any).fileSlotLabels = meta.fileSlotLabels;
+          }
+          if (meta.imageUrl !== undefined) {
+            (opt as any).imageUrl = meta.imageUrl;
+          }
+        }
+      }
     }
 
     return product;

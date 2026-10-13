@@ -214,6 +214,31 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
         if (!product) {
             throw new common_1.NotFoundException(`Product with ID '${id}' not found`);
         }
+        if (product.fields && product.fields.length > 0) {
+            const reusableAttrs = await this.prisma.reusableAttribute.findMany({
+                where: { isActive: true },
+            });
+            const attrMap = new Map(reusableAttrs.map((a) => [a.code, a]));
+            for (const field of product.fields) {
+                const reusable = attrMap.get(field.key);
+                const reusableOptions = reusable?.options || [];
+                const optMetaMap = new Map(reusableOptions.map((o) => [o.value, o]));
+                const fieldValRules = field.validationRules || {};
+                const savedOptionConfigs = fieldValRules.optionConfigs || {};
+                for (const opt of field.options) {
+                    const meta = optMetaMap.get(opt.value) || savedOptionConfigs[opt.value] || {};
+                    if (meta.fileCount !== undefined) {
+                        opt.fileCount = Number(meta.fileCount);
+                    }
+                    if (meta.fileSlotLabels !== undefined) {
+                        opt.fileSlotLabels = meta.fileSlotLabels;
+                    }
+                    if (meta.imageUrl !== undefined) {
+                        opt.imageUrl = meta.imageUrl;
+                    }
+                }
+            }
+        }
         return product;
     }
     async createProduct(dto, actorId) {
@@ -386,6 +411,50 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                 codSurcharge: dto.codSurcharge,
             },
         });
+        if (dto.fields !== undefined) {
+            await this.prisma.$transaction(async (tx) => {
+                await tx.productFieldOption.deleteMany({
+                    where: { field: { productId: id } },
+                });
+                await tx.productField.deleteMany({
+                    where: { productId: id },
+                });
+                for (let i = 0; i < dto.fields.length; i++) {
+                    const f = dto.fields[i];
+                    const fieldRecord = await tx.productField.create({
+                        data: {
+                            productId: id,
+                            label: f.label,
+                            key: f.key,
+                            type: f.type || catalogue_dto_1.ProductFieldTypeDto.SELECT,
+                            description: f.description,
+                            defaultValue: f.defaultValue,
+                            isRequired: f.isRequired ?? true,
+                            isCustomerVisible: f.isCustomerVisible ?? true,
+                            isCustomerEditable: f.isCustomerEditable ?? true,
+                            sortOrder: f.sortOrder ?? i,
+                        },
+                    });
+                    if (f.options && f.options.length > 0) {
+                        for (let j = 0; j < f.options.length; j++) {
+                            const opt = f.options[j];
+                            await tx.productFieldOption.create({
+                                data: {
+                                    fieldId: fieldRecord.id,
+                                    label: opt.label,
+                                    value: opt.value,
+                                    priceModifierType: opt.priceModifierType || 'FIXED',
+                                    priceModifier: opt.priceModifier || 0,
+                                    sortOrder: opt.sortOrder ?? j,
+                                    isDefault: opt.isDefault ?? j === 0,
+                                    isActive: opt.isActive ?? true,
+                                },
+                            });
+                        }
+                    }
+                }
+            });
+        }
         await this.auditService.log({
             actorId,
             action: 'PRODUCT_UPDATED',
@@ -1296,17 +1365,24 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                 },
             });
         }
-        return this.prisma.reusableAttribute.findMany({
+        const list = await this.prisma.reusableAttribute.findMany({
             where: { isActive: true },
             orderBy: { sortOrder: 'asc' },
         });
+        return list.map((attr) => ({
+            ...attr,
+            isOptionalAddOn: Boolean(attr.options?.[0]?.isOptionalAddOn || attr.isOptionalAddOn),
+        }));
     }
     async getReusableAttributeById(id) {
         const attr = await this.prisma.reusableAttribute.findUnique({ where: { id } });
         if (!attr) {
             throw new common_1.NotFoundException(`Reusable attribute with ID '${id}' not found`);
         }
-        return attr;
+        return {
+            ...attr,
+            isOptionalAddOn: Boolean(attr.options?.[0]?.isOptionalAddOn || attr.isOptionalAddOn),
+        };
     }
     async createReusableAttribute(dto, actorId) {
         const existing = await this.prisma.reusableAttribute.findUnique({
@@ -1315,13 +1391,18 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
         if (existing) {
             throw new common_1.ConflictException(`Attribute code '${dto.code}' already exists`);
         }
+        const isAddOn = Boolean(dto.isOptionalAddOn);
+        const optionsWithMeta = (dto.options || []).map((o) => ({
+            ...o,
+            isOptionalAddOn: isAddOn,
+        }));
         const created = await this.prisma.reusableAttribute.create({
             data: {
                 name: dto.name,
                 code: dto.code,
                 type: dto.type || 'SELECT',
                 description: dto.description,
-                options: dto.options,
+                options: optionsWithMeta,
                 sortOrder: dto.sortOrder ?? 0,
                 isActive: dto.isActive ?? true,
             },
@@ -1333,7 +1414,10 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
             entityId: created.id,
             newState: created,
         });
-        return created;
+        return {
+            ...created,
+            isOptionalAddOn: isAddOn,
+        };
     }
     async updateReusableAttribute(id, dto, actorId) {
         const current = await this.getReusableAttributeById(id);
@@ -1345,6 +1429,17 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                 throw new common_1.ConflictException(`Attribute code '${dto.code}' already exists`);
             }
         }
+        const isAddOn = dto.isOptionalAddOn !== undefined
+            ? Boolean(dto.isOptionalAddOn)
+            : Boolean(current.isOptionalAddOn);
+        let optionsToSave = dto.options;
+        if (optionsToSave) {
+            optionsToSave = optionsToSave.map((o) => ({ ...o, isOptionalAddOn: isAddOn }));
+        }
+        else if (dto.isOptionalAddOn !== undefined) {
+            const currentOptions = current.options || [];
+            optionsToSave = currentOptions.map((o) => ({ ...o, isOptionalAddOn: isAddOn }));
+        }
         const updated = await this.prisma.reusableAttribute.update({
             where: { id },
             data: {
@@ -1352,7 +1447,7 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
                 ...(dto.code ? { code: dto.code } : {}),
                 ...(dto.type ? { type: dto.type } : {}),
                 ...(dto.description !== undefined ? { description: dto.description } : {}),
-                ...(dto.options ? { options: dto.options } : {}),
+                ...(optionsToSave ? { options: optionsToSave } : {}),
                 ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
                 ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
             },
@@ -1365,7 +1460,10 @@ let AdminCatalogueService = AdminCatalogueService_1 = class AdminCatalogueServic
             previousState: current,
             newState: updated,
         });
-        return updated;
+        return {
+            ...updated,
+            isOptionalAddOn: isAddOn,
+        };
     }
     async deleteReusableAttribute(id, actorId) {
         const current = await this.getReusableAttributeById(id);

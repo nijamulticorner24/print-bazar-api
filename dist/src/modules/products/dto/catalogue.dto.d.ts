@@ -197,6 +197,7 @@ export declare class UpdateProductDto {
     freeShippingThreshold?: number;
     allowCod?: boolean;
     codSurcharge?: number;
+    fields?: CreateProductFieldDto[];
 }
 export declare class CreateInventoryItemDto {
     name: string;
@@ -262,9 +263,11 @@ export declare class CreateReusableAttributeDto {
         fileCount?: number;
         fileSlotLabels?: string[];
         sortOrder?: number;
+        isOptionalAddOn?: boolean;
     }>;
     sortOrder?: number;
     isActive?: boolean;
+    isOptionalAddOn?: boolean;
 }
 export declare class UpdateReusableAttributeDto {
     name?: string;
@@ -282,7 +285,9 @@ export declare class UpdateReusableAttributeDto {
         fileCount?: number;
         fileSlotLabels?: string[];
         sortOrder?: number;
+        isOptionalAddOn?: boolean;
     }>;
     sortOrder?: number;
     isActive?: boolean;
+    isOptionalAddOn?: boolean;
 }

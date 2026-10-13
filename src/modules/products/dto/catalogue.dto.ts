@@ -656,6 +656,12 @@ export class UpdateProductDto {
   @Min(0)
   @IsOptional()
   codSurcharge?: number;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateProductFieldDto)
+  @IsOptional()
+  fields?: CreateProductFieldDto[];
 }
 
 // ==========================================
@@ -858,6 +864,7 @@ export class CreateReusableAttributeDto {
     fileCount?: number;
     fileSlotLabels?: string[];
     sortOrder?: number;
+    isOptionalAddOn?: boolean;
   }>;
 
   @IsNumber()
@@ -867,6 +874,10 @@ export class CreateReusableAttributeDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isOptionalAddOn?: boolean;
 }
 
 export class UpdateReusableAttributeDto {
@@ -899,6 +910,7 @@ export class UpdateReusableAttributeDto {
     fileCount?: number;
     fileSlotLabels?: string[];
     sortOrder?: number;
+    isOptionalAddOn?: boolean;
   }>;
 
   @IsNumber()
@@ -908,5 +920,9 @@ export class UpdateReusableAttributeDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isOptionalAddOn?: boolean;
 }
 

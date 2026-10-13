@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PricingService, OptionSelectionDto } from '../pricing/pricing.service';
+import { ShippingGstService } from '../shipping-gst/shipping-gst.service';
 import { AuditService } from '../audit/audit.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
@@ -50,7 +51,22 @@ export interface CreateOrderItemDto {
     actualMegapixels?: number;
     qualityStatus?: string;
     warningAccepted?: boolean;
+    slotLabel?: string;
   };
+  artworkFiles?: Record<string, {
+    fileUrl: string;
+    storageKey?: string;
+    fileName?: string;
+    originalFileName?: string;
+    mimeType?: string;
+    fileSize?: number;
+    width?: number;
+    height?: number;
+    actualMegapixels?: number;
+    qualityStatus?: string;
+    warningAccepted?: boolean;
+    slotLabel?: string;
+  }>;
   referenceImage?: {
     fileUrl: string;
     storageKey?: string;
@@ -113,6 +129,7 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pricingService: PricingService,
+    private readonly shippingGstService: ShippingGstService,
     private readonly auditService: AuditService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -229,8 +246,12 @@ export class OrdersService {
       // Determine explicit artwork source and workflow route
       const artReq = product.artworkRequirement || 'OPTIONAL';
       const af = itemDto.artworkFile;
+      const afs = itemDto.artworkFiles;
+      const firstSlotArt = afs && Object.values(afs).length > 0 ? Object.values(afs)[0] : null;
       const rawArt = af
         ? af
+        : firstSlotArt
+        ? firstSlotArt
         : itemDto.artworkUrl
         ? {
             fileUrl: itemDto.artworkUrl,
@@ -243,7 +264,11 @@ export class OrdersService {
           }
         : null;
 
-      const hasArtwork = Boolean(rawArt?.fileUrl || rawArt?.storageKey);
+      const hasArtwork = Boolean(
+        rawArt?.fileUrl ||
+        rawArt?.storageKey ||
+        (afs && Object.values(afs).some((f: any) => f?.fileUrl || f?.storageKey))
+      );
       const refReq = product.referenceImageRequirement || 'OPTIONAL';
       const rawRef =
         itemDto.referenceImage ||
@@ -290,8 +315,6 @@ export class OrdersService {
       });
 
       subtotal += quote.subtotal;
-      totalTax += quote.totalTax;
-      shippingAmount += quote.estimatedShipping;
       if (quote.productionDays > maxProductionDays) {
         maxProductionDays = quote.productionDays;
       }
@@ -312,6 +335,7 @@ export class OrdersService {
           artworkPrice: Number(product.artworkPrice) || 0,
           artworkFee: quote.artworkFee,
           artworkFile: rawArt,
+          artworkFiles: afs || (rawArt ? { artwork: rawArt } : null),
           artworkUrl: rawArt?.fileUrl || null,
           artworkStorageKey: rawArt?.storageKey || null,
           artworkSource,
@@ -331,7 +355,30 @@ export class OrdersService {
       });
     }
 
+    // 2b. Authoritative Order-Level Shipping and GST Calculation
+    const deliveryMethod = dto.deliveryMethod || 'COURIER';
+    const shipTaxCalc = await this.shippingGstService.calculateShippingAndTax(
+      subtotal,
+      dto.shippingAddress?.postalCode,
+      deliveryMethod === 'STORE_PICKUP' ? 'STORE_PICKUP' : 'COURIER',
+      false,
+    );
+    shippingAmount = shipTaxCalc.shippingFee;
+    totalTax = shipTaxCalc.gstAmount;
     const totalAmount = Math.round((subtotal + totalTax + shippingAmount) * 100) / 100;
+
+    // Attach shipping and tax snapshot to items so historical orders retain audit proof
+    for (const it of evaluatedItems) {
+      if (typeof it.specifications === 'object' && it.specifications !== null) {
+        (it.specifications as any)['_shippingGstSnapshot'] = {
+          shippingCharge: shippingAmount,
+          isFreeShipping: shipTaxCalc.isFreeShippingApplied,
+          matchedZone: shipTaxCalc.matchedZone,
+          gstRatePercent: shipTaxCalc.gstRatePercent,
+          gstAmount: totalTax,
+        };
+      }
+    }
 
     // 3. Generate unique Order Number: PB-YYYYMMDD-XXXX
     const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -363,8 +410,8 @@ export class OrdersService {
           data: {
             customerId,
             type: 'SHIPPING',
-            contactName: dto.shippingAddress.contactName,
-            phone: dto.shippingAddress.phone,
+            contactName: dto.shippingAddress.contactName || dto.customerDetails?.fullName || 'Customer',
+            phone: dto.shippingAddress.phone || dto.customerDetails?.phone || '',
             street: dto.shippingAddress.street,
             city: dto.shippingAddress.city,
             state: dto.shippingAddress.state,
@@ -442,51 +489,71 @@ export class OrdersService {
         const itemDto = dto.items[i];
         const createdItem = createdOrder.items[i];
         const artObj = itemDto.artworkFile;
-        const art = artObj
-          ? artObj
-          : itemDto.artworkUrl
-          ? {
+        const artFiles = itemDto.artworkFiles;
+
+        const filesToCreate: Array<{ slotKey: string; file: any }> = [];
+        if (artFiles && Object.keys(artFiles).length > 0) {
+          for (const [slotKey, sFile] of Object.entries(artFiles)) {
+            if (sFile && (sFile.fileUrl || sFile.storageKey)) {
+              filesToCreate.push({ slotKey, file: sFile });
+            }
+          }
+        } else if (artObj && (artObj.fileUrl || artObj.storageKey)) {
+          filesToCreate.push({ slotKey: 'artwork', file: artObj });
+        } else if (itemDto.artworkUrl) {
+          filesToCreate.push({
+            slotKey: 'artwork',
+            file: {
               fileUrl: itemDto.artworkUrl,
               storageKey: itemDto.artworkStorageKey || itemDto.artworkUrl,
               originalFileName: 'Customer_Artwork',
               mimeType: 'image/jpeg',
               fileSize: 1024 * 1024,
-              width: undefined,
-              height: undefined,
-              actualMegapixels: undefined,
-              qualityStatus: 'PASSED',
-              warningAccepted: false,
-            }
-          : null;
+            },
+          });
+        }
 
-        if ((art?.fileUrl || art?.storageKey) && createdItem) {
+        let primaryArtworkId: string | null = null;
+        for (let vIdx = 0; vIdx < filesToCreate.length; vIdx++) {
+          const { slotKey, file: artItem } = filesToCreate[vIdx];
           const checksum = crypto
             .createHash('sha256')
-            .update(`${art.storageKey || art.fileUrl}-${Date.now()}`)
+            .update(`${artItem.storageKey || artItem.fileUrl}-${Date.now()}-${vIdx}`)
             .digest('hex');
+
+          const slotPrefix = artItem.slotLabel || (slotKey !== 'artwork' ? slotKey.replace(/[_-]+/g, ' ').toUpperCase() : '');
+          const originalName = slotPrefix
+            ? `${slotPrefix}: ${artItem.originalFileName || 'Artwork'}`
+            : (artItem.originalFileName || 'Customer_Artwork');
 
           const createdArtwork = await tx.artworkVersion.create({
             data: {
               orderItemId: createdItem.id,
-              versionNumber: 1,
-              storageKey: art.storageKey || art.fileUrl,
-              originalFileName: art.originalFileName || 'Customer_Artwork',
-              mimeType: art.mimeType || 'image/jpeg',
-              fileSize: art.fileSize || 1024 * 1024,
+              versionNumber: vIdx + 1,
+              storageKey: artItem.storageKey || artItem.fileUrl,
+              originalFileName: originalName,
+              mimeType: artItem.mimeType || 'image/jpeg',
+              fileSize: artItem.fileSize || 1024 * 1024,
               checksum,
               status: ArtworkStatus.PENDING_REVIEW,
-              widthPixels: art.width,
-              heightPixels: art.height,
-              actualMegapixels: art.actualMegapixels,
-              qualityStatus: art.qualityStatus || 'PASSED',
-              warningAccepted: art.warningAccepted ?? false,
+              widthPixels: artItem.width,
+              heightPixels: artItem.height,
+              actualMegapixels: artItem.actualMegapixels,
+              qualityStatus: artItem.qualityStatus || 'PASSED',
+              warningAccepted: artItem.warningAccepted ?? false,
               uploadedBy: customerId,
             },
           });
 
+          if (!primaryArtworkId) {
+            primaryArtworkId = createdArtwork.id;
+          }
+        }
+
+        if (primaryArtworkId && createdItem) {
           await tx.orderItem.update({
             where: { id: createdItem.id },
-            data: { approvedArtworkVersionId: createdArtwork.id },
+            data: { approvedArtworkVersionId: primaryArtworkId },
           });
         }
       }

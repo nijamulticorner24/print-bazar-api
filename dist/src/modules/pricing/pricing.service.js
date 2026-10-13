@@ -12,10 +12,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PricingService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const shipping_gst_service_1 = require("../shipping-gst/shipping-gst.service");
 let PricingService = class PricingService {
     prisma;
-    constructor(prisma) {
+    shippingGstService;
+    constructor(prisma, shippingGstService) {
         this.prisma = prisma;
+        this.shippingGstService = shippingGstService;
     }
     async calculateQuote(dto) {
         let product = await this.prisma.product.findFirst({
@@ -184,8 +187,17 @@ let PricingService = class PricingService {
         let baseUnitPrice = originalBasePrice;
         let appliedOffer = null;
         const availableOffers = [];
+        let matchedSpecificCombo = false;
         if (product.pricingMatrices && product.pricingMatrices.length > 0) {
             const sortedMatrices = [...product.pricingMatrices].sort((a, b) => a.minQty - b.minQty);
+            const reusableAttrs = await this.prisma.reusableAttribute.findMany({
+                where: { isActive: true },
+            });
+            const addOnCodes = new Set((reusableAttrs || [])
+                .filter((a) => Boolean(a.options?.[0]?.isOptionalAddOn || a.isOptionalAddOn))
+                .map((a) => String(a.code).toLowerCase()));
+            let bestMatchingRule = null;
+            let highestMatchSpecificity = -1;
             for (const m of sortedMatrices) {
                 const combo = m.attributeCombination || {};
                 const ruleUnitPrice = Number(m.unitPrice);
@@ -207,20 +219,56 @@ let PricingService = class PricingService {
                     label,
                 });
                 if (dto.quantity >= m.minQty && (!m.maxQty || dto.quantity <= m.maxQty)) {
-                    if (discountPercent > 0) {
-                        baseUnitPrice = Math.round(originalBasePrice * (1 - discountPercent / 100) * 10000) / 10000;
-                    }
-                    else if (ruleUnitPrice > 0) {
-                        baseUnitPrice = ruleUnitPrice;
-                        if (originalBasePrice > ruleUnitPrice) {
-                            discountPercent = Math.round(((originalBasePrice - ruleUnitPrice) / originalBasePrice) * 100);
+                    const comboEntries = Object.entries(combo).filter(([k]) => k !== 'discountPercent' && k !== 'label' && k !== 'offerName');
+                    if (comboEntries.length === 0) {
+                        if (highestMatchSpecificity < 0) {
+                            bestMatchingRule = { rule: m, discountPercent, label, isSpecific: false };
+                            highestMatchSpecificity = 0;
                         }
                     }
+                    else {
+                        const allKeysAreAddOns = comboEntries.every(([k]) => addOnCodes.has(k.toLowerCase()));
+                        if (!allKeysAreAddOns) {
+                            continue;
+                        }
+                        const allMatch = comboEntries.every(([k, v]) => String(userSelections[k]) === String(v));
+                        if (allMatch && comboEntries.length > highestMatchSpecificity) {
+                            bestMatchingRule = { rule: m, discountPercent, label, isSpecific: true };
+                            highestMatchSpecificity = comboEntries.length;
+                        }
+                    }
+                }
+            }
+            if (bestMatchingRule) {
+                const { rule, discountPercent, label, isSpecific } = bestMatchingRule;
+                const ruleUnitPrice = Number(rule.unitPrice);
+                if (discountPercent > 0) {
+                    baseUnitPrice = Math.round(originalBasePrice * (1 - discountPercent / 100) * 10000) / 10000;
+                }
+                else if (ruleUnitPrice > 0) {
+                    baseUnitPrice = ruleUnitPrice;
+                    if (originalBasePrice > ruleUnitPrice) {
+                        const calculatedDisc = Math.round(((originalBasePrice - ruleUnitPrice) / originalBasePrice) * 100);
+                        appliedOffer = {
+                            offerId: rule.id,
+                            minQty: rule.minQty,
+                            maxQty: rule.maxQty,
+                            discountPercent: calculatedDisc,
+                            offerName: label,
+                            savingsAmount: Math.round((originalBasePrice - ruleUnitPrice) * dto.quantity * 100) / 100,
+                        };
+                    }
+                }
+                if (isSpecific) {
+                    matchedSpecificCombo = true;
+                    optionsUnitModifier = 0;
+                }
+                if (!appliedOffer && discountPercent > 0) {
                     const savingsPerUnit = Math.max(0, originalBasePrice - baseUnitPrice);
                     appliedOffer = {
-                        offerId: m.id,
-                        minQty: m.minQty,
-                        maxQty: m.maxQty,
+                        offerId: rule.id,
+                        minQty: rule.minQty,
+                        maxQty: rule.maxQty,
                         discountPercent,
                         offerName: label,
                         savingsAmount: Math.round(savingsPerUnit * dto.quantity * 100) / 100,
@@ -228,7 +276,7 @@ let PricingService = class PricingService {
                 }
             }
         }
-        if (!appliedOffer) {
+        if (!appliedOffer && (!product.pricingMatrices || product.pricingMatrices.length === 0)) {
             if (dto.quantity >= 5000) {
                 baseUnitPrice = Math.round(originalBasePrice * 0.82 * 10000) / 10000;
                 appliedOffer = {
@@ -290,37 +338,20 @@ let PricingService = class PricingService {
         const discountPercent = appliedOffer ? appliedOffer.discountPercent : 0;
         const printItemsTotal = Math.round(unitPrice * dto.quantity * 100) / 100;
         const subtotal = Math.round((printItemsTotal + artworkFee + designServiceFee) * 100) / 100;
-        const taxRate = 0.18;
-        let cgst = 0;
-        let sgst = 0;
-        let igst = 0;
-        if (dto.isInterState) {
-            igst = Math.round(subtotal * taxRate * 100) / 100;
-        }
-        else {
-            cgst = Math.round((subtotal * (taxRate / 2)) * 100) / 100;
-            sgst = Math.round((subtotal * (taxRate / 2)) * 100) / 100;
-        }
-        const totalTax = igst > 0 ? igst : cgst + sgst;
-        const courierRate = product.courierCharge !== null && product.courierCharge !== undefined ? Number(product.courierCharge) : 100;
-        const freeShippingThreshold = product.freeShippingThreshold !== null && product.freeShippingThreshold !== undefined ? Number(product.freeShippingThreshold) : 1000;
         const deliveryMethod = dto.deliveryMethod || 'COURIER';
-        let estimatedShipping = 0;
-        if (deliveryMethod === 'STORE_PICKUP') {
-            estimatedShipping = 0;
-        }
-        else if (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) {
-            estimatedShipping = 0;
-        }
-        else {
-            estimatedShipping = courierRate;
-        }
-        const allowCod = product.allowCod ?? true;
-        const codSurcharge = product.codSurcharge !== null && product.codSurcharge !== undefined ? Number(product.codSurcharge) : 50;
+        const shipTaxResult = await this.shippingGstService.calculateShippingAndTax(subtotal, dto.shippingPincode, deliveryMethod === 'STORE_PICKUP' ? 'STORE_PICKUP' : 'COURIER', dto.isInterState || false);
+        const cgst = shipTaxResult.cgst;
+        const sgst = shipTaxResult.sgst;
+        const igst = shipTaxResult.igst;
+        const totalTax = shipTaxResult.gstAmount;
+        const estimatedShipping = shipTaxResult.shippingFee;
+        const courierRate = shipTaxResult.baseShippingFee;
+        const freeShippingThreshold = shipTaxResult.freeShippingThreshold;
+        const allowCod = false;
+        const codSurcharge = 0;
+        const codCharge = 0;
         const paymentMethod = dto.paymentMethod || 'FULL';
-        const isCodSelected = Boolean(dto.isCod || paymentMethod === 'COD');
-        const codCharge = isCodSelected && allowCod ? codSurcharge : 0;
-        const grandTotal = Math.round((subtotal + totalTax + estimatedShipping + codCharge) * 100) / 100;
+        const grandTotal = Math.round((subtotal + totalTax + estimatedShipping) * 100) / 100;
         specificationsSnapshot['_artworkRequirement'] = {
             requirement: artworkReq,
             price: rawArtworkPrice,
@@ -373,6 +404,9 @@ let PricingService = class PricingService {
             courierCharge: courierRate,
             freeShippingThreshold,
             estimatedShipping,
+            matchedZone: shipTaxResult.matchedZone,
+            isFreeShippingApplied: shipTaxResult.isFreeShippingApplied,
+            gstRatePercent: shipTaxResult.gstRatePercent,
             allowCod,
             codSurcharge,
             codCharge,
@@ -390,6 +424,7 @@ let PricingService = class PricingService {
 exports.PricingService = PricingService;
 exports.PricingService = PricingService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        shipping_gst_service_1.ShippingGstService])
 ], PricingService);
 //# sourceMappingURL=pricing.service.js.map

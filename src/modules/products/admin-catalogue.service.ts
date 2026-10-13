@@ -268,6 +268,35 @@ export class AdminCatalogueService {
       throw new NotFoundException(`Product with ID '${id}' not found`);
     }
 
+    if (product.fields && product.fields.length > 0) {
+      const reusableAttrs = await (this.prisma as any).reusableAttribute.findMany({
+        where: { isActive: true },
+      });
+      const attrMap = new Map<string, any>(reusableAttrs.map((a: any) => [a.code, a]));
+
+      for (const field of product.fields) {
+        const reusable = attrMap.get(field.key);
+        const reusableOptions = (reusable?.options as any[]) || [];
+        const optMetaMap = new Map<string, any>(reusableOptions.map((o: any) => [o.value, o]));
+
+        const fieldValRules = (field.validationRules as any) || {};
+        const savedOptionConfigs = fieldValRules.optionConfigs || {};
+
+        for (const opt of field.options) {
+          const meta = optMetaMap.get(opt.value) || savedOptionConfigs[opt.value] || {};
+          if (meta.fileCount !== undefined) {
+            (opt as any).fileCount = Number(meta.fileCount);
+          }
+          if (meta.fileSlotLabels !== undefined) {
+            (opt as any).fileSlotLabels = meta.fileSlotLabels;
+          }
+          if (meta.imageUrl !== undefined) {
+            (opt as any).imageUrl = meta.imageUrl;
+          }
+        }
+      }
+    }
+
     return product;
   }
 
@@ -460,6 +489,53 @@ export class AdminCatalogueService {
         codSurcharge: dto.codSurcharge,
       } as any,
     });
+
+    if (dto.fields !== undefined) {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.productFieldOption.deleteMany({
+          where: { field: { productId: id } },
+        });
+        await tx.productField.deleteMany({
+          where: { productId: id },
+        });
+
+        for (let i = 0; i < dto.fields!.length; i++) {
+          const f = dto.fields![i];
+          const fieldRecord = await tx.productField.create({
+            data: {
+              productId: id,
+              label: f.label,
+              key: f.key,
+              type: (f.type as any) || ProductFieldTypeDto.SELECT,
+              description: f.description,
+              defaultValue: f.defaultValue,
+              isRequired: f.isRequired ?? true,
+              isCustomerVisible: f.isCustomerVisible ?? true,
+              isCustomerEditable: f.isCustomerEditable ?? true,
+              sortOrder: f.sortOrder ?? i,
+            },
+          });
+
+          if (f.options && f.options.length > 0) {
+            for (let j = 0; j < f.options.length; j++) {
+              const opt = f.options[j];
+              await tx.productFieldOption.create({
+                data: {
+                  fieldId: fieldRecord.id,
+                  label: opt.label,
+                  value: opt.value,
+                  priceModifierType: opt.priceModifierType || 'FIXED',
+                  priceModifier: opt.priceModifier || 0,
+                  sortOrder: opt.sortOrder ?? j,
+                  isDefault: opt.isDefault ?? j === 0,
+                  isActive: opt.isActive ?? true,
+                },
+              });
+            }
+          }
+        }
+      });
+    }
 
     await this.auditService.log({
       actorId,
@@ -1543,10 +1619,15 @@ export class AdminCatalogueService {
       });
     }
 
-    return (this.prisma as any).reusableAttribute.findMany({
+    const list = await (this.prisma as any).reusableAttribute.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
     });
+
+    return list.map((attr: any) => ({
+      ...attr,
+      isOptionalAddOn: Boolean(attr.options?.[0]?.isOptionalAddOn || attr.isOptionalAddOn),
+    }));
   }
 
   async getReusableAttributeById(id: string) {
@@ -1554,7 +1635,10 @@ export class AdminCatalogueService {
     if (!attr) {
       throw new NotFoundException(`Reusable attribute with ID '${id}' not found`);
     }
-    return attr;
+    return {
+      ...attr,
+      isOptionalAddOn: Boolean(attr.options?.[0]?.isOptionalAddOn || attr.isOptionalAddOn),
+    };
   }
 
   async createReusableAttribute(dto: CreateReusableAttributeDto, actorId?: string) {
@@ -1565,13 +1649,19 @@ export class AdminCatalogueService {
       throw new ConflictException(`Attribute code '${dto.code}' already exists`);
     }
 
+    const isAddOn = Boolean(dto.isOptionalAddOn);
+    const optionsWithMeta = (dto.options || []).map((o) => ({
+      ...o,
+      isOptionalAddOn: isAddOn,
+    }));
+
     const created = await (this.prisma as any).reusableAttribute.create({
       data: {
         name: dto.name,
         code: dto.code,
         type: (dto.type as any) || 'SELECT',
         description: dto.description,
-        options: dto.options as any,
+        options: optionsWithMeta as any,
         sortOrder: dto.sortOrder ?? 0,
         isActive: dto.isActive ?? true,
       },
@@ -1585,7 +1675,10 @@ export class AdminCatalogueService {
       newState: created,
     });
 
-    return created;
+    return {
+      ...created,
+      isOptionalAddOn: isAddOn,
+    };
   }
 
   async updateReusableAttribute(id: string, dto: UpdateReusableAttributeDto, actorId?: string) {
@@ -1600,6 +1693,18 @@ export class AdminCatalogueService {
       }
     }
 
+    const isAddOn = dto.isOptionalAddOn !== undefined
+      ? Boolean(dto.isOptionalAddOn)
+      : Boolean(current.isOptionalAddOn);
+
+    let optionsToSave = dto.options;
+    if (optionsToSave) {
+      optionsToSave = optionsToSave.map((o) => ({ ...o, isOptionalAddOn: isAddOn }));
+    } else if (dto.isOptionalAddOn !== undefined) {
+      const currentOptions = (current.options as any[]) || [];
+      optionsToSave = currentOptions.map((o) => ({ ...o, isOptionalAddOn: isAddOn }));
+    }
+
     const updated = await (this.prisma as any).reusableAttribute.update({
       where: { id },
       data: {
@@ -1607,7 +1712,7 @@ export class AdminCatalogueService {
         ...(dto.code ? { code: dto.code } : {}),
         ...(dto.type ? { type: dto.type as any } : {}),
         ...(dto.description !== undefined ? { description: dto.description } : {}),
-        ...(dto.options ? { options: dto.options as any } : {}),
+        ...(optionsToSave ? { options: optionsToSave as any } : {}),
         ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
       },
@@ -1622,7 +1727,10 @@ export class AdminCatalogueService {
       newState: updated,
     });
 
-    return updated;
+    return {
+      ...updated,
+      isOptionalAddOn: isAddOn,
+    };
   }
 
   async deleteReusableAttribute(id: string, actorId?: string) {

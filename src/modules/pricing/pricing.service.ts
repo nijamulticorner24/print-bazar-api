@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ShippingGstService } from '../shipping-gst/shipping-gst.service';
 
 export interface OptionSelectionDto {
   optionCode: string;
@@ -45,6 +46,9 @@ export interface QuoteItemBreakdown {
   courierCharge: number;
   freeShippingThreshold: number;
   estimatedShipping: number;
+  matchedZone?: { id: string; zoneName: string; pincodePrefix: string; shippingCharge: number } | null;
+  isFreeShippingApplied?: boolean;
+  gstRatePercent?: number;
   allowCod: boolean;
   codSurcharge: number;
   codCharge: number;
@@ -80,7 +84,10 @@ export interface QuoteItemBreakdown {
 
 @Injectable()
 export class PricingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly shippingGstService: ShippingGstService,
+  ) {}
 
   async calculateQuote(dto: QuoteCalculationRequestDto): Promise<QuoteItemBreakdown> {
     let product = await this.prisma.product.findFirst({
@@ -278,9 +285,24 @@ export class PricingService {
     let baseUnitPrice = originalBasePrice;
     let appliedOffer: QuoteItemBreakdown['appliedOffer'] = null;
     const availableOffers: NonNullable<QuoteItemBreakdown['availableOffers']> = [];
+    let matchedSpecificCombo = false;
 
     if (product.pricingMatrices && product.pricingMatrices.length > 0) {
       const sortedMatrices = [...product.pricingMatrices].sort((a, b) => a.minQty - b.minQty);
+
+      // Fetch active reusable attributes to identify which are configured as optional add-ons
+      const reusableAttrs = await (this.prisma as any).reusableAttribute.findMany({
+        where: { isActive: true },
+      });
+      const addOnCodes = new Set<string>(
+        (reusableAttrs || [])
+          .filter((a: any) => Boolean(a.options?.[0]?.isOptionalAddOn || a.isOptionalAddOn))
+          .map((a: any) => String(a.code).toLowerCase()),
+      );
+
+      // Track the best matching matrix rule for the current requested quantity & attributes
+      let bestMatchingRule: any = null;
+      let highestMatchSpecificity = -1;
 
       for (const m of sortedMatrices) {
         const combo = (m.attributeCombination as any) || {};
@@ -308,22 +330,69 @@ export class PricingService {
           label,
         });
 
-        // If current quantity qualifies for this tier
+        // Check if current quantity qualifies for this matrix rule
         if (dto.quantity >= m.minQty && (!m.maxQty || dto.quantity <= m.maxQty)) {
-          if (discountPercent > 0) {
-            baseUnitPrice = Math.round(originalBasePrice * (1 - discountPercent / 100) * 10000) / 10000;
-          } else if (ruleUnitPrice > 0) {
-            baseUnitPrice = ruleUnitPrice;
-            if (originalBasePrice > ruleUnitPrice) {
-              discountPercent = Math.round(((originalBasePrice - ruleUnitPrice) / originalBasePrice) * 100);
+          const comboEntries = Object.entries(combo).filter(
+            ([k]) => k !== 'discountPercent' && k !== 'label' && k !== 'offerName',
+          );
+
+          if (comboEntries.length === 0) {
+            // Base rule (no specific attributes required)
+            if (highestMatchSpecificity < 0) {
+              bestMatchingRule = { rule: m, discountPercent, label, isSpecific: false };
+              highestMatchSpecificity = 0;
+            }
+          } else {
+            // Optional add-on validation:
+            // If an attribute rule contains keys that are not active add-ons, do not apply extra charge
+            const allKeysAreAddOns = comboEntries.every(([k]) => addOnCodes.has(k.toLowerCase()));
+            if (!allKeysAreAddOns) {
+              continue;
+            }
+
+            // Specific attribute combination rule: verify all combo keys match user selections
+            const allMatch = comboEntries.every(([k, v]) => String(userSelections[k]) === String(v));
+            if (allMatch && comboEntries.length > highestMatchSpecificity) {
+              bestMatchingRule = { rule: m, discountPercent, label, isSpecific: true };
+              highestMatchSpecificity = comboEntries.length;
             }
           }
+        }
+      }
 
+      if (bestMatchingRule) {
+        const { rule, discountPercent, label, isSpecific } = bestMatchingRule;
+        const ruleUnitPrice = Number(rule.unitPrice);
+
+        if (discountPercent > 0) {
+          baseUnitPrice = Math.round(originalBasePrice * (1 - discountPercent / 100) * 10000) / 10000;
+        } else if (ruleUnitPrice > 0) {
+          baseUnitPrice = ruleUnitPrice;
+          if (originalBasePrice > ruleUnitPrice) {
+            const calculatedDisc = Math.round(((originalBasePrice - ruleUnitPrice) / originalBasePrice) * 100);
+            appliedOffer = {
+              offerId: rule.id,
+              minQty: rule.minQty,
+              maxQty: rule.maxQty,
+              discountPercent: calculatedDisc,
+              offerName: label,
+              savingsAmount: Math.round((originalBasePrice - ruleUnitPrice) * dto.quantity * 100) / 100,
+            };
+          }
+        }
+
+        if (isSpecific) {
+          matchedSpecificCombo = true;
+          // The matrix unit price is the complete price for this variant, avoid double-charging option modifiers
+          optionsUnitModifier = 0;
+        }
+
+        if (!appliedOffer && discountPercent > 0) {
           const savingsPerUnit = Math.max(0, originalBasePrice - baseUnitPrice);
           appliedOffer = {
-            offerId: m.id,
-            minQty: m.minQty,
-            maxQty: m.maxQty,
+            offerId: rule.id,
+            minQty: rule.minQty,
+            maxQty: rule.maxQty,
             discountPercent,
             offerName: label,
             savingsAmount: Math.round(savingsPerUnit * dto.quantity * 100) / 100,
@@ -332,8 +401,8 @@ export class PricingService {
       }
     }
 
-    // Default volume savings tier if no explicit pricing matrix matched
-    if (!appliedOffer) {
+    // Default volume savings tier only if product has NO pricing matrices configured by admin
+    if (!appliedOffer && (!product.pricingMatrices || product.pricingMatrices.length === 0)) {
       if (dto.quantity >= 5000) {
         baseUnitPrice = Math.round(originalBasePrice * 0.82 * 10000) / 10000;
         appliedOffer = {
@@ -402,42 +471,30 @@ export class PricingService {
     const printItemsTotal = Math.round(unitPrice * dto.quantity * 100) / 100;
     const subtotal = Math.round((printItemsTotal + artworkFee + designServiceFee) * 100) / 100;
 
-    // Standard Print Tariff GST in India = 18% (9% CGST + 9% SGST or 18% IGST)
-    const taxRate = 0.18;
-    let cgst = 0;
-    let sgst = 0;
-    let igst = 0;
-
-    if (dto.isInterState) {
-      igst = Math.round(subtotal * taxRate * 100) / 100;
-    } else {
-      cgst = Math.round((subtotal * (taxRate / 2)) * 100) / 100;
-      sgst = Math.round((subtotal * (taxRate / 2)) * 100) / 100;
-    }
-    const totalTax = igst > 0 ? igst : cgst + sgst;
-
-    // Courier Delivery & Shipping Calculation (Product Configured with Free Threshold)
-    const courierRate = (product as any).courierCharge !== null && (product as any).courierCharge !== undefined ? Number((product as any).courierCharge) : 100;
-    const freeShippingThreshold = (product as any).freeShippingThreshold !== null && (product as any).freeShippingThreshold !== undefined ? Number((product as any).freeShippingThreshold) : 1000;
+    // Dynamic Authoritative GST & Shipping Calculation via ShippingGstService
     const deliveryMethod = dto.deliveryMethod || 'COURIER';
-    
-    let estimatedShipping = 0;
-    if (deliveryMethod === 'STORE_PICKUP') {
-      estimatedShipping = 0;
-    } else if (freeShippingThreshold > 0 && subtotal >= freeShippingThreshold) {
-      estimatedShipping = 0;
-    } else {
-      estimatedShipping = courierRate;
-    }
+    const shipTaxResult = await this.shippingGstService.calculateShippingAndTax(
+      subtotal,
+      dto.shippingPincode,
+      deliveryMethod === 'STORE_PICKUP' ? 'STORE_PICKUP' : 'COURIER',
+      dto.isInterState || false,
+    );
 
-    // Cash on Delivery (COD) Surcharge Calculation
-    const allowCod = (product as any).allowCod ?? true;
-    const codSurcharge = (product as any).codSurcharge !== null && (product as any).codSurcharge !== undefined ? Number((product as any).codSurcharge) : 50;
+    const cgst = shipTaxResult.cgst;
+    const sgst = shipTaxResult.sgst;
+    const igst = shipTaxResult.igst;
+    const totalTax = shipTaxResult.gstAmount;
+    const estimatedShipping = shipTaxResult.shippingFee;
+    const courierRate = shipTaxResult.baseShippingFee;
+    const freeShippingThreshold = shipTaxResult.freeShippingThreshold;
+
+    // Cash on Delivery (COD) - Fully Removed / Disabled
+    const allowCod = false;
+    const codSurcharge = 0;
+    const codCharge = 0;
     const paymentMethod = dto.paymentMethod || 'FULL';
-    const isCodSelected = Boolean(dto.isCod || paymentMethod === 'COD');
-    const codCharge = isCodSelected && allowCod ? codSurcharge : 0;
 
-    const grandTotal = Math.round((subtotal + totalTax + estimatedShipping + codCharge) * 100) / 100;
+    const grandTotal = Math.round((subtotal + totalTax + estimatedShipping) * 100) / 100;
 
     // Enrich specifications snapshot with flow engine meta
     specificationsSnapshot['_artworkRequirement'] = {
@@ -497,6 +554,9 @@ export class PricingService {
       courierCharge: courierRate,
       freeShippingThreshold,
       estimatedShipping,
+      matchedZone: shipTaxResult.matchedZone,
+      isFreeShippingApplied: shipTaxResult.isFreeShippingApplied,
+      gstRatePercent: shipTaxResult.gstRatePercent,
       allowCod,
       codSurcharge,
       codCharge,

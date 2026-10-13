@@ -28,6 +28,7 @@ const sla_module_1 = require("./modules/sla/sla.module");
 const notification_module_1 = require("./modules/notifications/notification.module");
 const operations_module_1 = require("./modules/operations/operations.module");
 const events_module_1 = require("./modules/events/events.module");
+const shipping_gst_module_1 = require("./modules/shipping-gst/shipping-gst.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -54,6 +55,7 @@ exports.AppModule = AppModule = __decorate([
             sla_module_1.SlaModule,
             notification_module_1.NotificationModule,
             operations_module_1.OperationsModule,
+            shipping_gst_module_1.ShippingGstModule,
         ],
     })
 ], AppModule);

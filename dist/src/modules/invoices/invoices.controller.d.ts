@@ -23,12 +23,12 @@ export declare class InvoicesController {
                 type: string;
                 isDefault: boolean;
                 customerId: string;
+                postalCode: string;
                 contactName: string;
                 street: string;
                 landmark: string | null;
                 city: string;
                 state: string;
-                postalCode: string;
                 country: string;
             } | null;
             billingAddress: {
@@ -39,12 +39,12 @@ export declare class InvoicesController {
                 type: string;
                 isDefault: boolean;
                 customerId: string;
+                postalCode: string;
                 contactName: string;
                 street: string;
                 landmark: string | null;
                 city: string;
                 state: string;
-                postalCode: string;
                 country: string;
             } | null;
             items: {
@@ -95,8 +95,8 @@ export declare class InvoicesController {
         cgst: import("@prisma/client/runtime/library").Decimal;
         sgst: import("@prisma/client/runtime/library").Decimal;
         igst: import("@prisma/client/runtime/library").Decimal;
-        totalTax: import("@prisma/client/runtime/library").Decimal;
         grandTotal: import("@prisma/client/runtime/library").Decimal;
+        totalTax: import("@prisma/client/runtime/library").Decimal;
         invoiceNumber: string;
         customerGstin: string | null;
         pdfUrl: string | null;
@@ -109,8 +109,8 @@ export declare class InvoicesController {
         cgst: import("@prisma/client/runtime/library").Decimal;
         sgst: import("@prisma/client/runtime/library").Decimal;
         igst: import("@prisma/client/runtime/library").Decimal;
-        totalTax: import("@prisma/client/runtime/library").Decimal;
         grandTotal: import("@prisma/client/runtime/library").Decimal;
+        totalTax: import("@prisma/client/runtime/library").Decimal;
         invoiceNumber: string;
         customerGstin: string | null;
         pdfUrl: string | null;
