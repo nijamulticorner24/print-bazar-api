@@ -1,0 +1,240 @@
+import { PrismaService } from '../prisma/prisma.service';
+export declare class ProductsService {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    listProducts(categoryId?: string, search?: string): Promise<({
+        category: {
+            parent: {
+                id: string;
+                name: string;
+                slug: string;
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            name: string;
+            isActive: boolean;
+            updatedAt: Date;
+            description: string | null;
+            slug: string;
+            sortOrder: number;
+            image: string | null;
+            parentId: string | null;
+        };
+        images: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            sortOrder: number;
+            isPrimary: boolean;
+            productId: string;
+            storageKey: string | null;
+            url: string;
+            altText: string | null;
+            caption: string | null;
+        }[];
+        fields: ({
+            options: {
+                id: string;
+                createdAt: Date;
+                isActive: boolean;
+                updatedAt: Date;
+                sortOrder: number;
+                label: string;
+                fieldId: string;
+                value: string;
+                priceModifierType: string;
+                priceModifier: import("@prisma/client/runtime/library").Decimal;
+                isDefault: boolean;
+            }[];
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
+            sortOrder: number;
+            isCustomerVisible: boolean;
+            productId: string;
+            label: string;
+            key: string;
+            type: import(".prisma/client").$Enums.ProductFieldType;
+            placeholder: string | null;
+            defaultValue: string | null;
+            isRequired: boolean;
+            isCustomerEditable: boolean;
+            validationRules: import("@prisma/client/runtime/library").JsonValue | null;
+            conditionalLogic: import("@prisma/client/runtime/library").JsonValue | null;
+        })[];
+    } & {
+        id: string;
+        createdAt: Date;
+        name: string;
+        isActive: boolean;
+        updatedAt: Date;
+        tags: string[];
+        description: string | null;
+        categoryId: string;
+        slug: string;
+        sku: string;
+        status: import(".prisma/client").$Enums.ProductStatus;
+        pricingModel: string;
+        basePrice: import("@prisma/client/runtime/library").Decimal;
+        minQuantity: number;
+        quantityStep: number | null;
+        maxQuantity: number;
+        productionDays: number;
+        sortOrder: number;
+        isFeatured: boolean;
+        seoTitle: string | null;
+        seoDescription: string | null;
+        trackInventory: boolean;
+        stockQuantity: number;
+        lowStockAlert: number;
+        defaultSize: string | null;
+        artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
+        artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
+        artworkQualityVerification: boolean;
+        minimumArtworkMegapixels: number | null;
+        referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
+        designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
+        designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        shippingChargeType: string;
+        unitWeightGrams: number | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        perAdditionalQtyRate: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        quantityCourierSlabs: import("@prisma/client/runtime/library").JsonValue | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
+    })[]>;
+    getProductBySlug(slugOrId: string): Promise<{
+        category: {
+            parent: {
+                id: string;
+                name: string;
+                slug: string;
+            } | null;
+        } & {
+            id: string;
+            createdAt: Date;
+            name: string;
+            isActive: boolean;
+            updatedAt: Date;
+            description: string | null;
+            slug: string;
+            sortOrder: number;
+            image: string | null;
+            parentId: string | null;
+        };
+        images: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            sortOrder: number;
+            isPrimary: boolean;
+            productId: string;
+            storageKey: string | null;
+            url: string;
+            altText: string | null;
+            caption: string | null;
+        }[];
+        fields: ({
+            options: {
+                id: string;
+                createdAt: Date;
+                isActive: boolean;
+                updatedAt: Date;
+                sortOrder: number;
+                label: string;
+                fieldId: string;
+                value: string;
+                priceModifierType: string;
+                priceModifier: import("@prisma/client/runtime/library").Decimal;
+                isDefault: boolean;
+            }[];
+        } & {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            description: string | null;
+            sortOrder: number;
+            isCustomerVisible: boolean;
+            productId: string;
+            label: string;
+            key: string;
+            type: import(".prisma/client").$Enums.ProductFieldType;
+            placeholder: string | null;
+            defaultValue: string | null;
+            isRequired: boolean;
+            isCustomerEditable: boolean;
+            validationRules: import("@prisma/client/runtime/library").JsonValue | null;
+            conditionalLogic: import("@prisma/client/runtime/library").JsonValue | null;
+        })[];
+        pricingMatrices: {
+            id: string;
+            createdAt: Date;
+            productId: string;
+            minQty: number;
+            maxQty: number;
+            attributeCombination: import("@prisma/client/runtime/library").JsonValue;
+            unitPrice: import("@prisma/client/runtime/library").Decimal;
+        }[];
+    } & {
+        id: string;
+        createdAt: Date;
+        name: string;
+        isActive: boolean;
+        updatedAt: Date;
+        tags: string[];
+        description: string | null;
+        categoryId: string;
+        slug: string;
+        sku: string;
+        status: import(".prisma/client").$Enums.ProductStatus;
+        pricingModel: string;
+        basePrice: import("@prisma/client/runtime/library").Decimal;
+        minQuantity: number;
+        quantityStep: number | null;
+        maxQuantity: number;
+        productionDays: number;
+        sortOrder: number;
+        isFeatured: boolean;
+        seoTitle: string | null;
+        seoDescription: string | null;
+        trackInventory: boolean;
+        stockQuantity: number;
+        lowStockAlert: number;
+        defaultSize: string | null;
+        artworkRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
+        artworkPrice: import("@prisma/client/runtime/library").Decimal | null;
+        artworkQualityVerification: boolean;
+        minimumArtworkMegapixels: number | null;
+        referenceImageRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
+        designServiceRequirement: import(".prisma/client").$Enums.ProductOptionRequirement;
+        designServicePrice: import("@prisma/client/runtime/library").Decimal | null;
+        shippingChargeType: string;
+        unitWeightGrams: number | null;
+        courierCharge: import("@prisma/client/runtime/library").Decimal | null;
+        perAdditionalQtyRate: import("@prisma/client/runtime/library").Decimal | null;
+        freeShippingThreshold: import("@prisma/client/runtime/library").Decimal | null;
+        quantityCourierSlabs: import("@prisma/client/runtime/library").JsonValue | null;
+        allowCod: boolean;
+        codSurcharge: import("@prisma/client/runtime/library").Decimal | null;
+    }>;
+    listCategories(): Promise<({
+        _count: {
+            products: number;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        name: string;
+        isActive: boolean;
+        updatedAt: Date;
+        description: string | null;
+        slug: string;
+        sortOrder: number;
+        image: string | null;
+        parentId: string | null;
+    })[]>;
+}

@@ -401,7 +401,10 @@ export class PricingService {
       });
       const addOnCodes = new Set<string>(
         (reusableAttrs || [])
-          .filter((a: any) => Boolean(a.options?.[0]?.isOptionalAddOn || a.isOptionalAddOn))
+          .filter((a: any) => {
+            const opts = Array.isArray(a.options) ? a.options : [];
+            return opts.some((o: any) => o.isOptionalAddOn === true) || Boolean(opts[0]?.isOptionalAddOn || a.isOptionalAddOn);
+          })
           .map((a: any) => String(a.code).toLowerCase()),
       );
 

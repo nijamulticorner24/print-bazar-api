@@ -1630,10 +1630,15 @@ export class AdminCatalogueService {
       orderBy: { sortOrder: 'asc' },
     });
 
-    return list.map((attr: any) => ({
-      ...attr,
-      isOptionalAddOn: Boolean(attr.options?.[0]?.isOptionalAddOn || attr.isOptionalAddOn),
-    }));
+    return list.map((attr: any) => {
+      const opts = Array.isArray(attr.options) ? attr.options : [];
+      const hasOptionAddon = opts.some((o: any) => o.isOptionalAddOn === true);
+      const isAddOn = hasOptionAddon || Boolean(opts[0]?.isOptionalAddOn || attr.isOptionalAddOn);
+      return {
+        ...attr,
+        isOptionalAddOn: isAddOn,
+      };
+    });
   }
 
   async getReusableAttributeById(id: string) {
@@ -1641,9 +1646,12 @@ export class AdminCatalogueService {
     if (!attr) {
       throw new NotFoundException(`Reusable attribute with ID '${id}' not found`);
     }
+    const opts = Array.isArray(attr.options) ? attr.options : [];
+    const hasOptionAddon = opts.some((o: any) => o.isOptionalAddOn === true);
+    const isAddOn = hasOptionAddon || Boolean(opts[0]?.isOptionalAddOn || attr.isOptionalAddOn);
     return {
       ...attr,
-      isOptionalAddOn: Boolean(attr.options?.[0]?.isOptionalAddOn || attr.isOptionalAddOn),
+      isOptionalAddOn: isAddOn,
     };
   }
 

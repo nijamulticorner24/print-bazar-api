@@ -1,0 +1,151 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ProductsService = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../prisma/prisma.service");
+let ProductsService = class ProductsService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async listProducts(categoryId, search) {
+        let categoryCondition = undefined;
+        if (categoryId) {
+            categoryCondition = { categoryId };
+        }
+        const where = {
+            isActive: true,
+            status: 'PUBLISHED',
+            ...(categoryCondition || {}),
+            ...(search
+                ? {
+                    OR: [
+                        { name: { contains: search, mode: 'insensitive' } },
+                        { description: { contains: search, mode: 'insensitive' } },
+                        { tags: { has: search } },
+                    ],
+                }
+                : {}),
+        };
+        return this.prisma.product.findMany({
+            where,
+            include: {
+                category: {
+                    include: {
+                        parent: {
+                            select: { id: true, name: true, slug: true },
+                        },
+                    },
+                },
+                images: {
+                    orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
+                },
+                fields: {
+                    where: { isCustomerVisible: true },
+                    include: {
+                        options: {
+                            where: { isActive: true },
+                            orderBy: { sortOrder: 'asc' },
+                        },
+                    },
+                    orderBy: { sortOrder: 'asc' },
+                },
+            },
+            orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+        });
+    }
+    async getProductBySlug(slugOrId) {
+        const product = await this.prisma.product.findFirst({
+            where: {
+                OR: [
+                    { slug: slugOrId },
+                    { id: slugOrId },
+                ],
+                status: 'PUBLISHED',
+                isActive: true,
+            },
+            include: {
+                category: {
+                    include: {
+                        parent: {
+                            select: { id: true, name: true, slug: true },
+                        },
+                    },
+                },
+                images: {
+                    orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
+                },
+                fields: {
+                    where: { isCustomerVisible: true },
+                    include: {
+                        options: {
+                            where: { isActive: true },
+                            orderBy: { sortOrder: 'asc' },
+                        },
+                    },
+                    orderBy: { sortOrder: 'asc' },
+                },
+                pricingMatrices: true,
+            },
+        });
+        if (!product) {
+            throw new common_1.NotFoundException(`Product with slug or ID '${slugOrId}' not found or is currently unavailable`);
+        }
+        if (product.fields && product.fields.length > 0) {
+            const reusableAttrs = await this.prisma.reusableAttribute.findMany({
+                where: { isActive: true },
+            });
+            const attrMap = new Map(reusableAttrs.map((a) => [a.code, a]));
+            for (const field of product.fields) {
+                const reusable = attrMap.get(field.key);
+                const reusableOptions = reusable?.options || [];
+                const optMetaMap = new Map(reusableOptions.map((o) => [o.value, o]));
+                const fieldValRules = field.validationRules || {};
+                const savedOptionConfigs = fieldValRules.optionConfigs || {};
+                for (const opt of field.options) {
+                    const meta = optMetaMap.get(opt.value) || savedOptionConfigs[opt.value] || {};
+                    if (meta.fileCount !== undefined) {
+                        opt.fileCount = Number(meta.fileCount);
+                    }
+                    if (meta.fileSlotLabels !== undefined) {
+                        opt.fileSlotLabels = meta.fileSlotLabels;
+                    }
+                    if (meta.imageUrl !== undefined) {
+                        opt.imageUrl = meta.imageUrl;
+                    }
+                }
+            }
+        }
+        return product;
+    }
+    async listCategories() {
+        return this.prisma.productCategory.findMany({
+            where: { isActive: true },
+            include: {
+                _count: {
+                    select: {
+                        products: {
+                            where: { status: 'PUBLISHED', isActive: true },
+                        },
+                    },
+                },
+            },
+            orderBy: [{ sortOrder: 'asc' }],
+        });
+    }
+};
+exports.ProductsService = ProductsService;
+exports.ProductsService = ProductsService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+], ProductsService);
+//# sourceMappingURL=products.service.js.map
